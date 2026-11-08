@@ -1,0 +1,362 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Stockroom">
+<meta name="theme-color" content="#d97a00">
+<link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" href="icon-192.png">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
+</head><body>
+<title>Pocket Stockroom</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: one narrow column like a clipboard on the dock — scan bar on top, ledger below, sheets slide up from the bottom */
+:root{
+  --bg:#eef1f3; --panel:#ffffff; --ink:#15202a; --muted:#5b6873; --line:#d3dade;
+  --accent:#d97a00; --accent-ink:#ffffff; --accent-soft:#fdf0dc;
+  --ok:#1f7a4d; --ok-soft:#e1f2e8; --warn:#b42318; --warn-soft:#fbe5e2;
+  --f-display:"Barlow Condensed","Arial Narrow",sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#11171c; --panel:#1a2229; --ink:#e7ecef; --muted:#93a0aa; --line:#2b353d;
+  --accent:#f0a032; --accent-ink:#1a1206; --accent-soft:#3a2b14;
+  --ok:#5cc58f; --ok-soft:#173326; --warn:#f2806f; --warn-soft:#3b1d19; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11171c; --panel:#1a2229; --ink:#e7ecef; --muted:#93a0aa; --line:#2b353d;
+  --accent:#f0a032; --accent-ink:#1a1206; --accent-soft:#3a2b14;
+  --ok:#5cc58f; --ok-soft:#173326; --warn:#f2806f; --warn-soft:#3b1d19; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45}
+.wrap{max-width:640px;margin:0 auto;padding-block:16px 96px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:16px}
+h1{font-family:var(--f-display);font-weight:700;font-size:30px;letter-spacing:.01em;margin:0;text-transform:uppercase;line-height:1}
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.sub{color:var(--muted);font-size:13px;margin-top:4px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+.stat b{display:block;font-family:var(--f-display);font-size:26px;line-height:1.1;font-variant-numeric:tabular-nums}
+.stat span{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.stat.alert b{color:var(--warn)}
+.scan{display:flex;flex-direction:column;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px}
+.scanbtn{border:0;width:100%;display:flex;align-items:center;justify-content:center;gap:10px;min-height:64px;border-radius:12px;background:var(--accent);color:var(--accent-ink);font-family:var(--f-display);font-size:24px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;user-select:none;-webkit-user-select:none}
+.photo:focus-within,.scanbtn:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.photo{font-size:14px;color:var(--muted);text-align:center;text-decoration:underline;cursor:pointer}
+.photo input,.scanbtn input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.row{display:flex;gap:8px}
+input,select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 12px;min-width:0;width:100%;font-size:16px}
+input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+button{font:inherit;font-weight:600;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:11px 14px;white-space:nowrap}
+button.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+button.danger{color:var(--warn);border-color:var(--warn)}
+button:disabled{opacity:.5;cursor:default}
+.hint{font-size:13px;color:var(--muted);margin:0}
+.msg{font-size:14px;padding:10px 12px;border-radius:10px;background:var(--accent-soft)}
+.msg.err{background:var(--warn-soft);color:var(--warn)}
+.tabs{display:flex;gap:6px;border-bottom:1px solid var(--line)}
+.tabs button{border:0;border-bottom:3px solid transparent;border-radius:0;background:none;padding:10px 6px;color:var(--muted);font-family:var(--f-display);font-size:18px;text-transform:uppercase;letter-spacing:.04em}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tabs .count{font-family:var(--f-mono);font-size:12px;margin-left:4px}
+.list{display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.item{display:grid;grid-template-columns:1fr auto;gap:4px 12px;padding:12px 14px;border-top:1px solid var(--line);text-align:left;border-radius:0;border-left:0;border-right:0;border-bottom:0;background:none;font-weight:400;white-space:normal;width:100%}
+.item:first-child{border-top:0}
+.item .nm{font-weight:600;min-width:0;overflow-wrap:anywhere}
+.item .meta{grid-column:1;font-size:12px;color:var(--muted);min-width:0;overflow-wrap:anywhere}
+.item .q{grid-row:1/span 2;grid-column:2;align-self:center;text-align:right}
+.item .q b{font-family:var(--f-display);font-size:24px;font-variant-numeric:tabular-nums}
+.item .q small{display:block;font-size:11px;color:var(--muted)}
+.pill{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;border-radius:99px;padding:2px 8px;margin-left:6px;vertical-align:1px}
+.pill.low{background:var(--warn-soft);color:var(--warn)}
+.pill.exp{background:var(--accent-soft);color:var(--accent)}
+.pill.ex{background:var(--line);color:var(--muted)}
+.mv{display:grid;grid-template-columns:auto 1fr auto;gap:2px 12px;padding:10px 14px;border-top:1px solid var(--line);align-items:center}
+.mv:first-child{border-top:0}
+.mv .d{font-family:var(--f-mono);font-weight:500;min-width:56px}
+.mv .d.in{color:var(--ok)} .mv .d.out{color:var(--warn)}
+.mv .t{font-size:12px;color:var(--muted);text-align:right}
+.mv .n{min-width:0;overflow-wrap:anywhere}
+.empty{padding:28px 18px;text-align:center;color:var(--muted)}
+.empty strong{display:block;color:var(--ink);font-size:16px;margin-bottom:4px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap}
+.toolbar input{flex:1 1 180px}
+.sheet-bg{position:fixed;inset:0;background:rgba(10,15,20,.45);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--panel);width:100%;max-width:640px;max-height:92%;overflow:auto;border-radius:18px 18px 0 0;padding-block:18px calc(18px + env(safe-area-inset-bottom,0px));padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:14px}
+.sheet h2{font-family:var(--f-display);font-size:26px;margin:0;text-transform:uppercase;line-height:1.05;overflow-wrap:anywhere}
+.code{font-family:var(--f-mono);font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.big{display:flex;align-items:baseline;gap:8px}
+.big b{font-family:var(--f-display);font-size:56px;line-height:1;font-variant-numeric:tabular-nums}
+.stepper{display:grid;grid-template-columns:56px 1fr 56px;gap:8px}
+.stepper button{font-size:22px;padding:8px}
+.stepper input{text-align:center;font-family:var(--f-mono);font-size:20px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.two button{min-height:52px;font-size:16px}
+.in-btn{background:var(--ok);color:#fff;border-color:var(--ok)}
+.out-btn{background:var(--warn);color:#fff;border-color:var(--warn)}
+:root[data-theme="dark"] .in-btn,:root[data-theme="dark"] .out-btn{color:#0e1418}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .in-btn,:root:not([data-theme="light"]) .out-btn{color:#0e1418}}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);min-width:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px;border-radius:10px;background:var(--warn-soft)}
+.banner{font-size:13px;padding:8px 12px;border-radius:10px;background:var(--accent-soft)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:99px;font-weight:600;z-index:30;max-width:calc(100% - 32px);text-align:center}
+.live{position:fixed;inset:0;background:#000;z-index:40;display:flex;flex-direction:column}
+.live video{flex:1;width:100%;height:100%;object-fit:cover;min-height:0}
+.live .frame{position:absolute;left:12%;right:12%;top:32%;height:22%;border:3px solid var(--accent);border-radius:14px;box-shadow:0 0 0 9999px rgba(0,0,0,.35);pointer-events:none}
+.live .bar{position:absolute;left:0;right:0;bottom:0;display:flex;gap:10px;justify-content:center;padding:16px max(16px,env(safe-area-inset-left,0px)) calc(20px + env(safe-area-inset-bottom,0px))}
+.live .bar button{background:rgba(255,255,255,.92);color:#111;border:0;min-width:110px;min-height:48px}
+.live .tip{position:absolute;top:calc(16px + env(safe-area-inset-top,0px));left:16px;right:16px;color:#fff;text-align:center;font-weight:600;text-shadow:0 1px 3px #000}
+@media (max-width:380px){.grid2{grid-template-columns:1fr}.stat b{font-size:22px}}
+@media (prefers-reduced-motion:no-preference){.sheet{animation:up .18s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}}}
+</style>
+
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>Pocket Stockroom</h1>
+      <div class="sub" id="syncNote">Loading…</div>
+    </div>
+    <button id="exportBtn" type="button">Export to Excel</button>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><b id="sItems">–</b><span>Items</span></div>
+    <div class="stat"><b id="sUnits">–</b><span>Units on hand</span></div>
+    <div class="stat" id="sLowBox"><b id="sLow">–</b><span>Low stock</span></div>
+  </div>
+
+  <section class="scan" aria-label="Scan">
+    <button type="button" class="scanbtn" id="liveBtn">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 7V4h3M21 7V4h-3M3 17v3h3M21 17v3h-3"/><path d="M7 8v8M10 8v8M13 8v8M16 8v8"/></svg>
+      Scan barcode</button>
+    <label class="photo" for="cam">Use a photo instead<input id="cam" type="file" accept="image/*" capture="environment"></label>
+    <form class="row" id="manual">
+      <input id="codeIn" placeholder="Or type / paste a code" autocomplete="off" inputmode="text" aria-label="Barcode or item code">
+      <button class="primary" type="submit">Go</button>
+    </form>
+    <p class="hint">Point the camera at a barcode or QR / DataMatrix code. The app finds the item, or creates it if it's new.</p>
+    <div id="scanMsg" hidden></div>
+  </section>
+
+  <div class="tabs" role="tablist">
+    <button role="tab" id="tabItems" aria-selected="true">Items</button>
+    <button role="tab" id="tabLow" aria-selected="false">Low stock<span class="count" id="lowCount"></span></button>
+    <button role="tab" id="tabHist" aria-selected="false">History</button>
+  </div>
+  <div class="toolbar" id="searchBar"><input id="search" placeholder="Search name, code or location" aria-label="Search items"></div>
+  <div class="list" id="list"></div>
+</div>
+
+<div class="live" id="live" hidden><video id="vid" playsinline muted autoplay></video><div class="frame"></div><div class="tip" id="liveTip">Line up the barcode inside the box</div><div class="bar"><button type="button" id="torch" hidden>Light</button><button type="button" id="liveClose">Cancel</button></div></div>
+<div id="sheetRoot"></div>
+<div class="toast" id="toast" hidden></div>
+<canvas id="cv" hidden></canvas>
+
+<script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js" crossorigin="anonymous"></script>
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let items={}, moves=[], tab="items", store=null, mode="loading";
+
+/* ---------- storage: cloud db, or this phone as fallback ---------- */
+const LKEY="pocket-stockroom-v1";
+function localLoad(){try{const d=JSON.parse(localStorage.getItem(LKEY)||"{}");items=d.items||{};moves=d.moves||[];}catch(e){}}
+function localSave(){try{localStorage.setItem(LKEY,JSON.stringify({items,moves:moves.slice(0,500)}));}catch(e){}}
+const api={
+  async addItem(d){ const id="i"+Date.now().toString(36)+Math.random().toString(36).slice(2,6); items[id]={...d,id}; localSave(); render(); return id; },
+  async updItem(id,d){ items[id]={...items[id],...d}; localSave(); render(); },
+  async delItem(id){ delete items[id]; localSave(); render(); },
+  async addMove(m){ moves.unshift({...m,id:"m"+Date.now()}); localSave(); render(); }
+};
+mode="local"; localLoad();
+$("syncNote").textContent="Saved on this iPhone. Export regularly as a backup.";
+try{ if(!localStorage.getItem(LKEY)){ const t=Date.now();
+  items={ex1:{id:"ex1",name:"Example: Printer paper A4",code:"0012345678905",qty:3,unit:"reams",reorder:5,location:"Shelf A1",expiry:"",example:true,updatedAt:t},
+         ex2:{id:"ex2",name:"Example: AA batteries",code:"5012345678900",qty:24,unit:"units",reorder:8,location:"Drawer 2",expiry:"",example:true,updatedAt:t}};
+  moves=[{id:"m1",itemId:"ex2",code:"5012345678900",name:"Example: AA batteries",delta:24,type:"receive",note:"Starting stock",at:t}]; localSave(); } }catch(e){}
+try{ navigator.storage&&navigator.storage.persist&&navigator.storage.persist(); }catch(e){}
+
+/* ---------- helpers ---------- */
+const num=v=>{const n=parseFloat(v);return isFinite(n)?n:0};
+const fmt=n=>Number.isInteger(n)?String(n):n.toFixed(2).replace(/0+$/,"").replace(/\.$/,"");
+const isLow=i=>num(i.reorder)>0&&num(i.qty)<=num(i.reorder);
+function expSoon(i){ if(!i.expiry)return false; const d=(new Date(i.expiry+"T00:00")-new Date())/864e5; return d<=7; }
+function ago(t){const s=(Date.now()-t)/1000; if(s<60)return"just now"; if(s<3600)return Math.floor(s/60)+" min ago"; if(s<86400)return Math.floor(s/3600)+" h ago"; return new Date(t).toLocaleDateString(undefined,{month:"short",day:"numeric"});}
+function byCode(code){const c=code.trim().toLowerCase(); return Object.values(items).find(i=>String(i.code||"").toLowerCase()===c);}
+function toast(t){const el=$("toast");el.textContent=t;el.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>el.hidden=true,2200);}
+function scanMsg(t,err){const m=$("scanMsg");m.className="msg"+(err?" err":"");m.textContent=t;m.hidden=!t;}
+
+/* ---------- render ---------- */
+function render(){
+  const all=Object.values(items).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+  const low=all.filter(isLow);
+  $("sItems").textContent=all.length;
+  $("sUnits").textContent=fmt(all.reduce((s,i)=>s+num(i.qty),0));
+  $("sLow").textContent=low.length; $("sLowBox").classList.toggle("alert",low.length>0);
+  $("lowCount").textContent=low.length?"("+low.length+")":"";
+  ["Items","Low","Hist"].forEach(k=>$("tab"+k).setAttribute("aria-selected",String(tab===k.toLowerCase()||(k==="Hist"&&tab==="hist"))));
+  $("searchBar").hidden=tab==="hist";
+  const L=$("list");
+  if(mode==="loading"){L.innerHTML='<div class="empty">Loading…</div>';return;}
+  if(tab==="hist"){
+    if(!moves.length){L.innerHTML='<div class="empty"><strong>No movements yet</strong>Every receive and use you record shows up here.</div>';return;}
+    L.innerHTML=moves.slice(0,200).map(m=>`<div class="mv"><span class="d ${m.delta>=0?"in":"out"}">${m.delta>=0?"+":"−"}${fmt(Math.abs(m.delta))}</span><span class="n">${esc(m.name)}${m.note?` <span class="hint">· ${esc(m.note)}</span>`:""}</span><span class="t">${ago(m.at)}</span></div>`).join("");
+    return;
+  }
+  const q=$("search").value.trim().toLowerCase();
+  let rows=(tab==="low"?low:all).filter(i=>!q||[i.name,i.code,i.location].join(" ").toLowerCase().includes(q));
+  if(!all.length){L.innerHTML='<div class="empty"><strong>Your stockroom is empty</strong>Scan a barcode or type a code above to add your first item.</div>';return;}
+  if(!rows.length){L.innerHTML=`<div class="empty">${tab==="low"?"<strong>Nothing is low</strong>Items show here when stock falls to their reorder point.":"No items match that search."}</div>`;return;}
+  L.innerHTML=rows.map(i=>`<button class="item" type="button" data-id="${esc(i.id)}"><span class="nm">${esc(i.name)}${i.example?'<span class="pill ex">Example</span>':""}${isLow(i)?'<span class="pill low">Low</span>':""}${expSoon(i)?'<span class="pill exp">Expiring</span>':""}</span><span class="q"><b>${fmt(num(i.qty))}</b><small>${esc(i.unit||"units")}</small></span><span class="meta mono">${esc(i.code||"no code")}${i.location?" · "+esc(i.location):""}</span></button>`).join("");
+}
+$("list").addEventListener("click",e=>{const b=e.target.closest(".item");if(b)openItem(b.dataset.id);});
+$("search").addEventListener("input",render);
+$("tabItems").onclick=()=>{tab="items";render()}; $("tabLow").onclick=()=>{tab="low";render()}; $("tabHist").onclick=()=>{tab="hist";render()};
+
+/* ---------- sheets ---------- */
+function closeSheet(){$("sheetRoot").innerHTML="";}
+function sheet(html){$("sheetRoot").innerHTML=`<div class="sheet-bg" id="sbg"><div class="sheet" role="dialog" aria-modal="true">${html}</div></div>`;$("sbg").addEventListener("click",e=>{if(e.target.id==="sbg")closeSheet();});}
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeSheet();});
+
+function openItem(id){
+  const i=items[id]; if(!i)return;
+  const hist=moves.filter(m=>m.itemId===id).slice(0,5);
+  sheet(`<div class="code">${esc(i.code||"no code")}${i.location?" · "+esc(i.location):""}${i.expiry?" · exp "+esc(i.expiry):""}</div>
+  <h2>${esc(i.name)}</h2>
+  <div class="big"><b>${fmt(num(i.qty))}</b><span>${esc(i.unit||"units")} on hand</span>${isLow(i)?'<span class="pill low">Low</span>':""}</div>
+  ${num(i.reorder)>0?`<p class="hint">Reorder point: ${fmt(num(i.reorder))} ${esc(i.unit||"")}</p>`:""}
+  <div class="stepper"><button type="button" id="mn" aria-label="Less">−</button><input id="qty" type="number" inputmode="decimal" value="1" min="0" step="any" aria-label="Quantity"><button type="button" id="pl" aria-label="More">+</button></div>
+  <input id="note" placeholder="Note (optional) e.g. PO number, supplier">
+  <div class="two"><button type="button" class="in-btn" id="recv">Receive +</button><button type="button" class="out-btn" id="use">Use / ship −</button></div>
+  <button type="button" id="count">Set exact count</button>
+  ${hist.length?`<div class="list">${hist.map(m=>`<div class="mv"><span class="d ${m.delta>=0?"in":"out"}">${m.delta>=0?"+":"−"}${fmt(Math.abs(m.delta))}</span><span class="n hint">${esc(m.note||m.type)}</span><span class="t">${ago(m.at)}</span></div>`).join("")}</div>`:""}
+  <div class="row"><button type="button" id="edit">Edit details</button><button type="button" class="danger" id="del">Delete</button><button type="button" id="close" style="margin-left:auto">Close</button></div>
+  <div id="cf"></div>`);
+  const q=$("qty");
+  $("mn").onclick=()=>q.value=Math.max(0,num(q.value)-1); $("pl").onclick=()=>q.value=num(q.value)+1;
+  const move=async(sign,type)=>{const n=num(q.value); if(n<=0){q.focus();return;}
+    const cur=num(items[id].qty), next=cur+sign*n;
+    if(next<0){toast("Only "+fmt(cur)+" on hand");return;}
+    await api.updItem(id,{qty:next,updatedAt:Date.now()});
+    await api.addMove({itemId:id,code:i.code||"",name:i.name,delta:sign*n,type,note:$("note").value.trim(),at:Date.now()});
+    closeSheet(); toast((sign>0?"Received ":"Removed ")+fmt(n)+" "+(i.unit||"")+" · now "+fmt(next));};
+  $("recv").onclick=()=>move(1,"receive"); $("use").onclick=()=>move(-1,"use");
+  $("count").onclick=async()=>{const n=num(q.value), cur=num(items[id].qty); if(n===cur){closeSheet();return;}
+    await api.updItem(id,{qty:n,updatedAt:Date.now()});
+    await api.addMove({itemId:id,code:i.code||"",name:i.name,delta:n-cur,type:"count",note:$("note").value.trim()||"Stock count",at:Date.now()});
+    closeSheet(); toast("Count set to "+fmt(n));};
+  $("edit").onclick=()=>openForm(i);
+  $("close").onclick=closeSheet;
+  $("del").onclick=()=>{$("cf").innerHTML=`<div class="confirm"><span>Delete ${esc(i.name)}? History stays.</span><button type="button" class="danger" id="yes">Delete</button><button type="button" id="no">Keep</button></div>`;
+    $("no").onclick=()=>$("cf").innerHTML=""; $("yes").onclick=async()=>{await api.delItem(id);closeSheet();toast("Deleted");};};
+}
+
+function openForm(existing,code){
+  const i=existing||{code:code||"",qty:0,unit:"units"};
+  sheet(`<h2>${existing?"Edit item":"New item"}</h2>
+  ${existing?"":`<p class="hint">Code <span class="mono">${esc(code||"–")}</span> isn't in your stock yet.</p>`}
+  <form id="f" style="display:flex;flex-direction:column;gap:12px">
+    <label class="f">Name<input id="fName" required value="${esc(i.name||"")}" placeholder="e.g. Printer paper A4"></label>
+    <label class="f">Barcode / code<input id="fCode" class="mono" value="${esc(i.code||"")}"></label>
+    <div class="grid2">
+      ${existing?"":`<label class="f">Starting qty<input id="fQty" type="number" inputmode="decimal" step="any" min="0" value="1"></label>`}
+      <label class="f">Unit<input id="fUnit" value="${esc(i.unit||"units")}" placeholder="units, kg, boxes"></label>
+      <label class="f">Reorder at<input id="fRe" type="number" inputmode="decimal" step="any" min="0" value="${esc(i.reorder??"")}" placeholder="0 = off"></label>
+      <label class="f">Location<input id="fLoc" value="${esc(i.location||"")}" placeholder="Shelf B2"></label>
+      <label class="f">Expiry date<input id="fExp" type="date" value="${esc(i.expiry||"")}"></label>
+    </div>
+    <div class="row"><button class="primary" type="submit" style="flex:1">${existing?"Save":"Add to stock"}</button><button type="button" id="cancel">Cancel</button></div>
+  </form>`);
+  $("cancel").onclick=closeSheet;
+  setTimeout(()=>$("fName").focus(),50);
+  $("f").addEventListener("submit",async e=>{e.preventDefault();
+    const name=$("fName").value.trim(); if(!name)return;
+    const c=$("fCode").value.trim();
+    const dup=c&&byCode(c); if(dup&&(!existing||dup.id!==existing.id)){toast("That code already belongs to "+dup.name);return;}
+    const d={name,code:c,unit:$("fUnit").value.trim()||"units",reorder:num($("fRe").value),location:$("fLoc").value.trim(),expiry:$("fExp").value||"",updatedAt:Date.now()};
+    if(existing){ if(existing.example) d.example=false; await api.updItem(existing.id,d); closeSheet(); toast("Saved"); }
+    else{ const q=num($("fQty").value); d.qty=q; const id=await api.addItem(d);
+      if(q>0) await api.addMove({itemId:id,code:c,name,delta:q,type:"receive",note:"Starting stock",at:Date.now()});
+      closeSheet(); toast("Added "+name); }
+  });
+}
+
+function handleCode(code){
+  code=String(code||"").trim(); if(!code)return;
+  const hit=byCode(code);
+  if(hit){scanMsg("");openItem(hit.id);} else {scanMsg("");openForm(null,code);}
+}
+$("manual").addEventListener("submit",e=>{e.preventDefault();handleCode($("codeIn").value);$("codeIn").value="";});
+
+/* ---------- barcode decode from a photo ---------- */
+function decodeCanvas(cv){
+  const Z=window.ZXing; if(!Z)throw new Error("noLib");
+  const hints=new Map(); hints.set(Z.DecodeHintType.TRY_HARDER,true);
+  const r=new Z.MultiFormatReader(); r.setHints(hints);
+  const src=new Z.HTMLCanvasElementLuminanceSource(cv);
+  try{return r.decode(new Z.BinaryBitmap(new Z.HybridBinarizer(src)));}
+  catch(e){ return r.decode(new Z.BinaryBitmap(new Z.HybridBinarizer(src.rotateCounterClockwise()))); }
+}
+$("cam").addEventListener("change",async e=>{
+  const f=e.target.files&&e.target.files[0]; e.target.value=""; if(!f)return;
+  scanMsg("Reading barcode…");
+  try{
+    const url=URL.createObjectURL(f); const img=new Image(); img.src=url; await img.decode();
+    const cv=$("cv"), ctx=cv.getContext("2d",{willReadFrequently:true});
+    let res=null;
+    for(const max of [1400,900,2000]){
+      const s=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));
+      cv.width=Math.round(img.naturalWidth*s); cv.height=Math.round(img.naturalHeight*s);
+      ctx.drawImage(img,0,0,cv.width,cv.height);
+      try{res=decodeCanvas(cv);break;}catch(err){if(err.message==="noLib")throw err;}
+    }
+    URL.revokeObjectURL(url);
+    if(!res){scanMsg("Couldn't read a barcode in that photo. Fill the frame with the code, hold steady in good light, or type the number below the bars.",true);return;}
+    if(navigator.vibrate)try{navigator.vibrate(40)}catch(_){}
+    handleCode(res.getText());
+  }catch(err){
+    scanMsg(err.message==="noLib"?"The barcode reader didn't load. Check your connection, or type the code instead.":"Couldn't open that photo. Try again or type the code.",true);
+  }
+});
+
+/* ---------- live scanner ---------- */
+let reader=null, stream=null;
+function stopLive(){ try{reader&&reader.reset();}catch(e){} reader=null; const v=$("vid"); try{(v.srcObject||stream)&&(v.srcObject||stream).getTracks().forEach(t=>t.stop());}catch(e){} v.srcObject=null; $("live").hidden=true; }
+$("liveClose").onclick=stopLive;
+$("liveBtn").onclick=async()=>{
+  scanMsg("");
+  if(!window.ZXing){scanMsg("The barcode reader didn't load. Connect to the internet once, then try again.",true);return;}
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){scanMsg("Live camera isn't available here. Use a photo instead.",true);return;}
+  $("live").hidden=false;
+  const Z=window.ZXing, hints=new Map(); hints.set(Z.DecodeHintType.TRY_HARDER,true);
+  reader=new Z.BrowserMultiFormatReader(hints,250);
+  try{
+    await reader.decodeFromConstraints({video:{facingMode:{ideal:"environment"},width:{ideal:1280},height:{ideal:720}}},$("vid"),(res,err)=>{
+      if(res){ const code=res.getText(); if(navigator.vibrate)try{navigator.vibrate(40)}catch(_){}; stopLive(); handleCode(code); }
+    });
+    stream=$("vid").srcObject;
+    const track=stream&&stream.getVideoTracks()[0]; const caps=track&&track.getCapabilities?track.getCapabilities():{};
+    if(caps.torch){ let on=false; $("torch").hidden=false; $("torch").onclick=()=>{on=!on;track.applyConstraints({advanced:[{torch:on}]}).catch(()=>{});}; }
+  }catch(e){ stopLive(); scanMsg(e&&e.name==="NotAllowedError"?"Camera access was blocked. Allow it in Settings › Safari › Camera, then try again.":"Couldn't start the camera. Use a photo instead.",true); }
+};
+
+/* ---------- export ---------- */
+$("exportBtn").onclick=async()=>{
+  const cell=v=>{const s=String(v??"");return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;};
+  const all=Object.values(items).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+  let csv="﻿Name,Code,Quantity,Unit,Reorder at,Status,Location,Expiry,Last updated\n"+all.map(i=>[i.name,i.code,num(i.qty),i.unit,num(i.reorder)||"",isLow(i)?"LOW":"OK",i.location,i.expiry,i.updatedAt?new Date(i.updatedAt).toLocaleString():""].map(cell).join(",")).join("\n");
+  csv+="\n\nHistory\nWhen,Item,Code,Change,Type,Note\n"+moves.map(m=>[new Date(m.at).toLocaleString(),m.name,m.code,m.delta,m.type,m.note].map(cell).join(",")).join("\n");
+  const fname="stock-"+new Date().toISOString().slice(0,10)+".csv";
+  const file=new File([csv],fname,{type:"text/csv"});
+  try{ if(navigator.canShare&&navigator.canShare({files:[file]})){ await navigator.share({files:[file],title:"Stock export"}); return; } }catch(e){ if(e&&e.name==="AbortError")return; }
+  const a=document.createElement("a"); a.href=URL.createObjectURL(file); a.download=fname; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1000);
+};
+
+render();
+if("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
+})();
+</script>
+
+</body></html>
