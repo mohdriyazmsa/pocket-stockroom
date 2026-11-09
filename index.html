@@ -122,7 +122,7 @@ h2{font-family:var(--f-disp);font-stretch:112%;font-size:17px;font-weight:800;ma
 .abc span{font-size:11px;color:var(--mute)}
 
 /* segmented */
-.seg{display:grid;grid-template-columns:repeat(3,1fr);background:var(--s1);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px}
+.seg{display:grid;grid-template-columns:repeat(4,1fr);background:var(--s1);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px}
 .seg button{height:38px;border-radius:10px;font-weight:700;font-size:13px;color:var(--mute)}
 .seg button[aria-pressed="true"]{background:var(--grad);color:#fff}
 
@@ -226,6 +226,21 @@ h2{font-family:var(--f-disp);font-stretch:112%;font-size:17px;font-weight:800;ma
 .photoRow .pv{width:84px;height:84px;border-radius:18px;overflow:hidden;background:var(--s2);display:grid;place-items:center;color:var(--dim);font-size:12px;position:relative}
 .photoRow .pv img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .photoBtns{display:flex;gap:8px;flex-wrap:wrap}
+.seg button{font-size:12.5px}
+.split2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.split2 div{background:var(--s1);border:1px solid var(--line);border-radius:14px;padding:10px 12px;text-align:center}
+.split2 b{display:block;font-size:20px}.split2 span{font-size:11px;color:var(--mute);text-transform:uppercase;letter-spacing:.06em}
+.rline{background:var(--s1);border:1px solid var(--line);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.rline .rh{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.rline .rh b{font-size:15px;overflow-wrap:anywhere}.rline .rh small{color:var(--mute);font-family:var(--f-mono)}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.mini{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:700;color:var(--mute);letter-spacing:.03em;min-width:0}
+.mini input,.mini select{height:42px;border-radius:12px;border:1px solid var(--line2);background:var(--s2);padding:0 10px;width:100%;min-width:0;font-size:15px;color:var(--ink)}
+.dest{display:grid;grid-template-columns:1fr 1fr;gap:8px;background:var(--s2);border-radius:14px;padding:10px}
+.dest .q{display:flex;gap:6px;flex-wrap:wrap;grid-column:1/-1}
+.dest .q button{height:30px;padding:0 12px;border-radius:99px;background:var(--s1);border:1px solid var(--line2);font-size:12px;font-weight:700}
+.warnbox{background:#fff4e5;color:#8a4b00;border-radius:14px;padding:12px 14px;font-size:13px;font-weight:600}
+.ok-box{background:#dcf5ea;color:#0b6b4a;border-radius:14px;padding:12px 14px;font-size:13px;font-weight:600}
 /* ---- alternative looks (More › Appearance) ---- */
 html[data-look="ios"]{--bg:#f2f2f7;--s1:#fff;--s2:#f2f2f7;--s3:#e5e5ea;--ink:#000;--mute:#6e6e73;--dim:#8e8e93;--line:rgba(60,60,67,.12);--line2:rgba(60,60,67,.18);--a1:#007aff;--grad:linear-gradient(#007aff,#007aff);--f-disp:-apple-system,"SF Pro Display",system-ui,sans-serif;--f-body:-apple-system,"SF Pro Text",system-ui,sans-serif}
 html[data-look="ios"] .glow{display:none}
@@ -321,7 +336,7 @@ html[data-look="bold"] .tab[aria-current="page"] svg{color:#ff3d7f!important}
 <section class="view" id="v-ord" hidden>
   <div class="hd"><div><div class="eyebrow">Purchasing</div><h1>Orders</h1></div>
     <button class="icb" id="ordAdd" aria-label="New"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button></div>
-  <div class="seg" id="ordSeg"><button data-s="re" aria-pressed="true">To reorder</button><button data-s="po" aria-pressed="false">Purchase orders</button><button data-s="su" aria-pressed="false">Suppliers</button></div>
+  <div class="seg" id="ordSeg"><button data-s="re" aria-pressed="true">Reorder</button><button data-s="po" aria-pressed="false">Orders</button><button data-s="rc" aria-pressed="false">Received</button><button data-s="su" aria-pressed="false">Suppliers</button></div>
   <div id="ordBody" style="margin-top:14px"></div>
 </section>
 
@@ -339,6 +354,8 @@ html[data-look="bold"] .tab[aria-current="page"] svg{color:#ff3d7f!important}
   <div class="panel" id="hist" style="padding:4px 16px 10px"></div>
   <div class="sect"><h2>Order emails</h2></div>
   <div class="panel"><label class="field">Sign emails as<input id="sigIn" placeholder="e.g. Riyaz Mohammed, 514-555-0123" autocomplete="name"></label><p style="color:var(--mute);font-size:12px;margin:8px 2px 0">Added at the end of every order email you send to suppliers.</p></div>
+  <div class="sect"><h2>Invoice reading (AI)</h2></div>
+  <div class="panel"><label class="field">Anthropic API key<input id="aiKeyIn" type="password" autocomplete="off" placeholder="sk-ant-… (optional)"></label><p style="color:var(--mute);font-size:12px;margin:8px 2px 0">Used only when you tap Scan invoice. Stored on this iPhone. Leave empty to enter invoices by hand.</p></div>
   <div class="sect"><h2>Tools</h2></div>
   <div class="panel" style="padding:0">
     <button class="row" id="exportBtn"><span class="ri"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"/></svg></span><div>Export to Excel<small>Stock, lots and history as a CSV file</small></div></button>
@@ -349,7 +366,7 @@ html[data-look="bold"] .tab[aria-current="page"] svg{color:#ff3d7f!important}
     <button class="row" id="clearEx"><span class="ri" style="background:#ffe1e7;color:var(--out)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></span><div>Remove example data<small>Delete the sample items, suppliers and orders</small></div></button>
   </div>
   <div id="moreCf"></div>
-  <p style="color:var(--dim);font-size:12px;margin:14px 4px">Everything is saved on this iPhone only. Back up regularly.<br>App version 2026.11.09-d · strong reader</p>
+  <p style="color:var(--dim);font-size:12px;margin:14px 4px">Everything is saved on this iPhone only. Back up regularly.<br>App version 2026.11.09-e</p>
 </section>
 </main>
 
@@ -390,10 +407,10 @@ function toast(t){const el=$("toast");el.textContent=t;el.hidden=false;clearTime
 
 /* ===================== DATA ===================== */
 const K3="pocket-stockroom-v3",K1="pocket-stockroom-v1";
-let D={items:{},suppliers:{},pos:{},moves:[],labels:{}};
+let D={items:{},suppliers:{},pos:{},moves:[],labels:{},receipts:{}};
 function save(){try{localStorage.setItem(K3,JSON.stringify(D));}catch(e){toast("Phone storage is full. Back up and remove old data.");}}
 function load(){
-  try{const d=JSON.parse(localStorage.getItem(K3)||"null");if(d){D={items:{},suppliers:{},pos:{},moves:[],labels:{},...d};return;}}catch(e){}
+  try{const d=JSON.parse(localStorage.getItem(K3)||"null");if(d){D={items:{},suppliers:{},pos:{},moves:[],labels:{},receipts:{},...d};return;}}catch(e){}
   try{const o=JSON.parse(localStorage.getItem(K1)||"null");
     if(o&&o.items){for(const i of Object.values(o.items)){const q=num(i.qty);const it={...i,lots:q>0?[{id:uid("l"),lot:"OPENING",qty:q,expiry:i.expiry||"",at:i.updatedAt||Date.now()}]:[]};delete it.qty;delete it.expiry;D.items[i.id]=it;}
       D.moves=(o.moves||[]).map(m=>({...m}));save();return;}}catch(e){}
@@ -453,11 +470,16 @@ function abcClass(){const since=Date.now()-90*DAY,val={};for(const m of D.moves)
   const arr=Object.entries(val).sort((a,b)=>b[1]-a[1]),tot=arr.reduce((s,x)=>s+x[1],0)||1;let cum=0;const out={};
   for(const [id,v] of arr){const before=cum/tot;cum+=v;out[id]=before<.8?"A":before<.95?"B":"C";}for(const i of items())if(!out[i.id])out[i.id]="C";return {cls:out,val,tot};}
 function rec(m){D.moves.unshift({id:uid("m"),at:Date.now(),lot:"",note:"",...m});if(D.moves.length>5000)D.moves.length=5000;}
-function receive(i,n,lot,expiry,note,poId,cost,pcs){lot=(lot||"").trim()||("L-"+new Date().toISOString().slice(2,10).replace(/-/g,""));
-  const ex=(i.lots||[]).find(l=>l.lot===lot&&(l.expiry||"")===(expiry||""));
-  if(ex){ex.qty=num(ex.qty)+n;if(pcs)ex.pcs=num(ex.pcs)+pcs;}else{i.lots=i.lots||[];i.lots.push({id:uid("l"),lot,qty:n,expiry:expiry||"",at:Date.now(),...(pcs?{pcs}:{})});}
-  if(cost>0)i.cost=cost;i.updatedAt=Date.now();rec({itemId:i.id,name:i.name,code:i.code||"",delta:n,type:"receive",lot,note:note||"",poId:poId||""});}
-function consume(i,n,note,prefLot,pcs){let left=n;const taken=[];const order=lotsFIFO(i);if(prefLot){const k=order.findIndex(l=>l.lot===String(prefLot).trim());if(k>0)order.unshift(order.splice(k,1)[0]);}
+function receive(i,n,lot,expiry,note,poId,cost,pcs,loc){lot=(lot||"").trim()||("L-"+new Date().toISOString().slice(2,10).replace(/-/g,""));loc=loc==="shelf"?"shelf":"";
+  const ex=(i.lots||[]).find(l=>l.lot===lot&&(l.expiry||"")===(expiry||"")&&(l.loc||"")===loc);
+  if(ex){ex.qty=num(ex.qty)+n;if(pcs)ex.pcs=num(ex.pcs)+pcs;}else{i.lots=i.lots||[];i.lots.push({id:uid("l"),lot,qty:n,expiry:expiry||"",at:Date.now(),...(pcs?{pcs}:{}),...(loc?{loc}:{})});}
+  if(cost>0)i.cost=cost;i.updatedAt=Date.now();rec({itemId:i.id,name:i.name,code:i.code||"",delta:n,type:"receive",lot,note:(note||"")+(loc?(note?" · ":"")+"to shelf":""),poId:poId||""});}
+const onShelf=i=>(i.lots||[]).filter(l=>l.loc==="shelf").reduce((s,l)=>s+num(l.qty),0);
+function moveToShelf(i,n){let left=n;const back=lotsFIFO(i).filter(l=>l.loc!=="shelf");const moved=[];
+  for(const l of back){if(left<=0)break;const t=Math.min(num(l.qty),left);l.qty=Math.round((num(l.qty)-t)*1e6)/1e6;left-=t;
+    const sh=(i.lots||[]).find(x=>x.loc==="shelf"&&x.lot===l.lot&&(x.expiry||"")===(l.expiry||""));if(sh)sh.qty=num(sh.qty)+t;else i.lots.push({id:uid("l"),lot:l.lot,qty:t,expiry:l.expiry||"",at:l.at,loc:"shelf"});moved.push(l.lot+"×"+fmt(t));}
+  i.lots=i.lots.filter(l=>num(l.qty)>0);i.updatedAt=Date.now();rec({itemId:i.id,name:i.name,code:i.code||"",delta:n-left,type:"move",lot:moved.join(", "),note:"Inventory → shelf"});return n-left;}
+function consume(i,n,note,prefLot,pcs){let left=n;const taken=[];const fifo=lotsFIFO(i),order=[...fifo.filter(l=>l.loc==="shelf"),...fifo.filter(l=>l.loc!=="shelf")];if(prefLot){const k=order.findIndex(l=>l.lot===String(prefLot).trim());if(k>0)order.unshift(order.splice(k,1)[0]);}
   for(const l of order){if(left<=0)break;const t=Math.min(num(l.qty),left);l.qty=Math.round((num(l.qty)-t)*1e6)/1e6;left-=t;if(pcs&&l.pcs){l.pcs=Math.max(0,l.pcs-pcs);pcs=0;}taken.push(l.lot+"×"+fmt(t));}
   i.lots=(i.lots||[]).filter(l=>num(l.qty)>0);i.updatedAt=Date.now();rec({itemId:i.id,name:i.name,code:i.code||"",delta:-n,type:"use",lot:taken.join(", "),note:note||""});return taken;}
 function setCount(i,n,note){const cur=qty(i);if(n===cur)return;if(n<cur)consume(i,cur-n,note||"Stock count");else receive(i,n-cur,"COUNT-ADJ","",note||"Stock count");D.moves[0].type="count";}
@@ -473,7 +495,7 @@ function pcard(i){return `<button class="pc" data-prod="${esc(i.id)}"><span clas
 function expPill(iso){const d=expDays(iso);if(d===null||d>14)return"";return `<span class="pill p-exp">${d<0?"Expired":d===0?"Expires today":"Exp. in "+d+"d"}</span>`;}
 function pills(i,ab){const s=status(i);let h=s==="out"?'<span class="pill p-out">Out of stock</span>':s==="low"?'<span class="pill p-low">Low</span>':'<span class="pill p-ok">In stock</span>';
   h+=expPill(nearestExp(i));const oo=onOrder(i.id);if(oo)h+=`<span class="pill p-a">${fmt(oo)} on order</span>`;
-  if(ab)h+=`<span class="pill p-info">Class ${ab}</span>`;const nl=lotsFIFO(i).length;if(nl>1)h+=`<span class="pill">${nl} lots</span>`;if(i.location)h+=`<span class="pill">${esc(i.location)}</span>`;return h;}
+  if(ab)h+=`<span class="pill p-info">Class ${ab}</span>`;const nl=lotsFIFO(i).length;if(nl>1)h+=`<span class="pill">${nl} lots</span>`;const sh=onShelf(i);if(sh>0)h+=`<span class="pill p-a">${fmt(sh)} on shelf</span>`;if(i.location)h+=`<span class="pill">${esc(i.location)}</span>`;return h;}
 function card(i,ab){const s=status(i),r=num(i.reorder),q=qty(i);const base=Math.max(num(i.par),r*3,1);
   const pct=q<=0?0:Math.max(5,Math.min(100,q/base*100));const col=s==="out"?"var(--out)":s==="low"?"var(--low)":"linear-gradient(90deg,#0f9f6e,#34d399)";
   return `<button class="card" data-item="${esc(i.id)}">${badge(i)}<span class="nm">${esc(i.name)}</span><span class="q"><b>${fmt(q)}</b><span>${esc(i.unit||"units")}</span></span><span class="sub mono">${esc(i.code||"no code")}${i.category?" · "+esc(i.category):""}</span><span class="bar"><i style="width:${pct}%;background:${col}"></i></span><span class="meta">${pills(i,ab)}</span></button>`;}
@@ -554,6 +576,12 @@ function renderOrd(){
       <div class="tot"><span>Estimated total</span><span class="mono">${money(tot)}</span></div>
       <button class="btn b-pri" style="margin-top:12px" data-mkpo="${esc(sid)}">Create purchase order</button></div>`;}).join("");
     return;}
+  if(ordSeg==="rc"){const rs=Object.values(D.receipts||{}).sort((a,b)=>b.createdAt-a.createdAt);
+    B.innerHTML=`<div class="act" style="margin-bottom:12px"><label class="btn b-pri" for="invPhoto">Scan invoice</label><button class="btn b-sec" id="rcNew">Enter or paste</button></div><input id="invPhoto" type="file" accept="image/*" hidden>`+
+      (rs.length?`<div class="list">${rs.map(r=>{const tot=r.lines.reduce((a,l)=>a+num(l.amount||num(l.qty)*num(l.price)),0);
+        return `<button class="card" data-rc="${esc(r.id)}" style="grid-template-columns:1fr auto"><span class="nm" style="grid-row:auto">${esc(r.supplier||"Unknown supplier")}</span><span class="q" style="grid-column:2"><b style="font-size:18px">${money(num(r.total)||tot)}</b><span>${r.lines.length} line${r.lines.length===1?"":"s"}</span></span><span class="sub mono">Invoice ${esc(r.invoice||"–")} · ${r.date?new Date(r.date+"T00:00").toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}):""}</span><span class="meta">${r.status==="done"?'<span class="pill p-ok">Put away</span>':'<span class="pill p-low">To check</span>'}${r.source==="ai"?'<span class="pill p-info">Read by AI</span>':""}</span></button>`;}).join("")}</div>`
+      :'<div class="empty"><b>No deliveries received yet</b>Scan a supplier invoice to fill in the items, quantities, lots and prices, then choose what goes to inventory and what goes on the shelf.</div>');
+    $("rcNew").onclick=()=>newReceiptManual();$("invPhoto").addEventListener("change",invoicePhoto);return;}
   if(ordSeg==="po"){
     const ps=Object.values(D.pos).sort((a,b)=>b.createdAt-a.createdAt);
     B.innerHTML=ps.length?`<div class="list">${ps.map(p=>{const s=D.suppliers[p.supplierId],tot=p.lines.reduce((a,l)=>a+num(l.qty)*num(l.cost),0);
@@ -570,7 +598,7 @@ function renderMore(){
   if(!D.moves.length){$("hist").innerHTML='<p style="color:var(--mute)">No activity yet.</p>';return;}
   let h="",last="";const td=new Date().toDateString(),yd=new Date(Date.now()-DAY).toDateString();
   for(const m of D.moves.slice(0,120)){const d=new Date(m.at).toDateString();if(d!==last){h+=`<div class="day">${d===td?"Today":d===yd?"Yesterday":new Date(m.at).toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"})}</div>`;last=d;}
-    const inn=m.delta>=0,lbl=m.type==="count"?"Count adjust":m.type==="receive"?"Received":"Used";
+    const inn=m.delta>=0,lbl=m.type==="count"?"Count adjust":m.type==="receive"?"Received":m.type==="move"?"Moved to shelf":"Used";
     h+=`<div class="mv"><span class="ic" style="background:${inn?"#dcf5ea":"#ffe1e7"};color:${inn?"var(--ok)":"var(--out)"}">${inn?"↓":"↑"}</span><span class="t">${esc(m.name)}</span><span class="d ${inn?"in":"out"}">${inn?"+":"−"}${fmt(Math.abs(m.delta))}</span><span class="s">${lbl}${m.lot?" · "+esc(m.lot):""}${m.note?" · "+esc(m.note):""} · ${new Date(m.at).toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"})}</span></div>`;}
   $("hist").innerHTML=h;
 }
@@ -588,9 +616,9 @@ $("chips").onclick=e=>{const b=e.target.closest(".chip");if(b){filter=b.dataset.
 $("search").addEventListener("input",render);
 $("ordSeg").onclick=e=>{const b=e.target.closest("button");if(b){ordSeg=b.dataset.s;renderOrd();}};
 $("addBtn").onclick=()=>itemForm(null,"");
-$("ordAdd").onclick=()=>{if(ordSeg==="su")supForm(null);else openPO(newPO("",[]));};
-document.addEventListener("click",e=>{const t=e.target.closest("[data-item],[data-po],[data-sup],[data-mkpo],[data-prod]");if(!t)return;
-  if(t.dataset.prod)openProduct(t.dataset.prod);else if(t.dataset.item)openItem(t.dataset.item);else if(t.dataset.po)openPO(t.dataset.po);else if(t.dataset.sup)supForm(D.suppliers[t.dataset.sup]);
+$("ordAdd").onclick=()=>{if(ordSeg==="su")supForm(null);else if(ordSeg==="rc")newReceiptManual();else openPO(newPO("",[]));};
+document.addEventListener("click",e=>{const t=e.target.closest("[data-item],[data-po],[data-sup],[data-mkpo],[data-prod],[data-rc]");if(!t)return;
+  if(t.dataset.rc)openReceipt(t.dataset.rc);else if(t.dataset.prod)openProduct(t.dataset.prod);else if(t.dataset.item)openItem(t.dataset.item);else if(t.dataset.po)openPO(t.dataset.po);else if(t.dataset.sup)supForm(D.suppliers[t.dataset.sup]);
   else if(t.dataset.mkpo){const sid=t.dataset.mkpo==="_"?"":t.dataset.mkpo;const lines=[];t.closest(".panel").querySelectorAll("[data-sug]").forEach(inp=>{const n=num(inp.value);if(n>0){const it=D.items[inp.dataset.sug];lines.push({itemId:it.id,qty:n,cost:num(it.cost)});}});
     if(!lines.length){toast("Enter at least one quantity");return;}const id=newPO(sid,lines);save();ordSeg="po";render();openPO(id);}});
 
@@ -608,15 +636,17 @@ function openItem(id){
     <div class="stepper"><button id="mn" aria-label="Less">−</button><input id="qty" type="number" inputmode="decimal" value="1" min="0" step="any" aria-label="Quantity"><button id="pl" aria-label="More">+</button></div></div>
   <div class="recvbox"><span class="lbl">Batch details (used when receiving)</span><div class="g2"><input class="inp mono" id="rLot" placeholder="Lot no. (auto)"><input class="inp" id="rExp" type="date" aria-label="Expiry date"></div><input class="inp" id="note" placeholder="Note · PO, supplier, reason"></div>
   <div class="act"><button class="btn b-in" id="recv">＋ Receive</button><button class="btn b-out" id="use">− Use (FIFO)</button></div>
-  <button class="btn b-sec" id="count">Set exact count to this number</button>
+  <div class="act"><button class="btn b-sec" id="count">Set exact count</button><button class="btn b-sec" id="toShelf">Move to shelf →</button></div>
+  <div class="split2"><div><b class="mono">${fmt(qty(i)-onShelf(i))}</b><span>In inventory</span></div><div><b class="mono">${fmt(onShelf(i))}</b><span>On shelf</span></div></div>
   <div class="panel" style="padding:6px 16px"><div class="sect" style="margin:8px 0 2px"><h2>Lots</h2><small>oldest expiry used first</small></div>
-    ${lots.length?lots.map((l,k)=>`<div class="lot"><b>${esc(l.lot)}${k===0?' <span class="pill p-info" style="margin-left:6px">Next out</span>':""}</b><span>${l.expiry?"Expires "+new Date(l.expiry+"T00:00").toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}):"No expiry"} · received ${new Date(l.at).toLocaleDateString(undefined,{month:"short",day:"numeric"})}</span><span class="r"><b class="mono" style="font-size:16px">${fmt(num(l.qty))}</b>${l.pcs?`<br><span style="font-size:11px;color:var(--mute)">${l.pcs} case${l.pcs===1?"":"s"}</span>`:""}<br>${expPill(l.expiry)}</span></div>`).join(""):'<p style="color:var(--mute);margin:8px 0 12px">No stock on hand.</p>'}</div>
-  ${hist.length?`<div class="panel" style="padding:6px 16px">${hist.map(m=>`<div class="mv"><span class="ic" style="background:${m.delta>=0?"#dcf5ea":"#ffe1e7"};color:${m.delta>=0?"var(--ok)":"var(--out)"}">${m.delta>=0?"↓":"↑"}</span><span class="t">${m.type==="receive"?"Received":m.type==="count"?"Count adjust":"Used"}${m.lot?" · "+esc(m.lot):""}</span><span class="d ${m.delta>=0?"in":"out"}">${m.delta>=0?"+":"−"}${fmt(Math.abs(m.delta))}</span><span class="s">${m.note?esc(m.note)+" · ":""}${new Date(m.at).toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}</span></div>`).join("")}</div>`:""}
+    ${lots.length?lots.map((l,k)=>`<div class="lot"><b>${esc(l.lot)} <span class="pill ${l.loc==="shelf"?"p-a":""}" style="margin-left:4px">${l.loc==="shelf"?"Shelf":"Inventory"}</span>${k===0?' <span class="pill p-info" style="margin-left:4px">Next out</span>':""}</b><span>${l.expiry?"Expires "+new Date(l.expiry+"T00:00").toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}):"No expiry"} · received ${new Date(l.at).toLocaleDateString(undefined,{month:"short",day:"numeric"})}</span><span class="r"><b class="mono" style="font-size:16px">${fmt(num(l.qty))}</b>${l.pcs?`<br><span style="font-size:11px;color:var(--mute)">${l.pcs} case${l.pcs===1?"":"s"}</span>`:""}<br>${expPill(l.expiry)}</span></div>`).join(""):'<p style="color:var(--mute);margin:8px 0 12px">No stock on hand.</p>'}</div>
+  ${hist.length?`<div class="panel" style="padding:6px 16px">${hist.map(m=>`<div class="mv"><span class="ic" style="background:${m.delta>=0?"#dcf5ea":"#ffe1e7"};color:${m.delta>=0?"var(--ok)":"var(--out)"}">${m.delta>=0?"↓":"↑"}</span><span class="t">${m.type==="receive"?"Received":m.type==="count"?"Count adjust":m.type==="move"?"Moved to shelf":"Used"}${m.lot?" · "+esc(m.lot):""}</span><span class="d ${m.delta>=0?"in":"out"}">${m.delta>=0?"+":"−"}${fmt(Math.abs(m.delta))}</span><span class="s">${m.note?esc(m.note)+" · ":""}${new Date(m.at).toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}</span></div>`).join("")}</div>`:""}
   <div class="act"><button class="btn b-sec" id="edit">Edit details</button><button class="btn b-dan" id="del">Delete</button></div><div id="cf"></div>`);
   hydrate($("sheetRoot"));const q=$("qty");$("mn").onclick=()=>q.value=Math.max(0,num(q.value)-1);$("pl").onclick=()=>q.value=num(q.value)+1;
   $("recv").onclick=()=>{const n=num(q.value);if(n<=0)return q.focus();receive(i,n,$("rLot").value,$("rExp").value,$("note").value.trim());save();render();closeSheet();toast("Received "+fmt(n)+" · now "+fmt(qty(i)));};
   $("use").onclick=()=>{const n=num(q.value);if(n<=0)return q.focus();if(n>qty(i)){toast("Only "+fmt(qty(i))+" on hand");return;}const tk=consume(i,n,$("note").value.trim());save();render();closeSheet();toast("Used "+fmt(n)+" from "+tk.join(", "));};
   $("count").onclick=()=>{setCount(i,num(q.value),$("note").value.trim());save();render();closeSheet();toast("Count set to "+fmt(qty(i)));};
+  $("toShelf").onclick=()=>{const n=num(q.value);if(n<=0)return q.focus();const inv=qty(i)-onShelf(i);if(inv<=0){toast("Nothing left in inventory to move");return;}const m=moveToShelf(i,Math.min(n,inv));save();render();closeSheet();toast("Moved "+fmt(m)+" "+(i.unit||"")+" to the shelf");};
   $("edit").onclick=()=>itemForm(i);
   $("del").onclick=()=>{$("cf").innerHTML=`<div class="confirm"><span style="flex:1">Delete ${esc(i.name)} and its lots? History stays.</span><button class="btn sm b-out" id="yes">Delete</button><button class="btn sm b-sec" id="no">Keep</button></div>`;$("no").onclick=()=>$("cf").innerHTML="";$("yes").onclick=()=>{delete D.items[id];PH.del(id);save();render();closeSheet();toast("Deleted");};};
 }
@@ -680,6 +710,100 @@ function supForm(ex){
   if(ex)$("sDel").onclick=()=>{$("scf").innerHTML=`<div class="confirm"><span style="flex:1">Delete ${esc(s.name)}? Items keep their stock.</span><button type="button" class="btn sm b-out" id="yes">Delete</button></div>`;$("yes").onclick=()=>{delete D.suppliers[ex.id];for(const i of items())if(i.supplierId===ex.id)i.supplierId="";save();render();closeSheet();toast("Supplier deleted");};};
   $("sf").onsubmit=e=>{e.preventDefault();const name=$("sName").value.trim();if(!name)return;const d={name,lead:num($("sLead").value),contact:$("sCon").value.trim(),phone:$("sPh").value.trim(),email:$("sEm").value.trim(),notes:$("sNo").value.trim()};
     if(ex)Object.assign(D.suppliers[ex.id],d,{example:false});else{const id=uid("s");D.suppliers[id]={id,...d};}save();ordSeg="su";render();closeSheet();toast("Supplier saved");};
+}
+/* ===================== RECEIVING (invoices) ===================== */
+const AIKEY="stockroom-ai-key";
+const nkey=s=>String(s||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+const titleCase=s=>String(s||"").toLowerCase().replace(/\b([a-z])/g,c=>c.toUpperCase()).replace(/\b(Kg|Lb|Pc)\b/g,m=>m.toLowerCase());
+function numIn(v){if(typeof v==="number")return v;const t=String(v||"").replace(/\s/g,"");if(!t)return 0;const c=t.lastIndexOf(","),d=t.lastIndexOf(".");let x=t;
+  if(c>d&&t.length-c===3&&d<0)x=t.replace(/\./g,"").replace(",",".");else x=t.replace(/,/g,"");const n=parseFloat(x);return isFinite(n)?n:0;}
+function matchItem(line,supplier){const sk=nkey(supplier),code=String(line.code||"").trim();
+  if(code){const hit=Object.values(D.items).find(i=>(i.supCodes||{})[sk]===code);if(hit)return hit.id;}
+  const dn=nkey(line.desc);if(!dn)return "";const exact=Object.values(D.items).find(i=>nkey(i.name)===dn||nkey(i.invName)===dn);if(exact)return exact.id;
+  const words=dn.split(" ").filter(w=>w.length>2);let bestId="",bestS=0;for(const i of Object.values(D.items)){const iw=nkey(i.name+" "+(i.invName||"")).split(" ");const hitN=words.filter(w=>iw.includes(w)).length;const sc=words.length?hitN/words.length:0;if(sc>bestS){bestS=sc;bestId=i.id;}}
+  return bestS>=0.75?bestId:"";}
+function newReceipt(data,source){const id=uid("r");const sup=data.supplier||"";
+  D.receipts=D.receipts||{};D.receipts[id]={id,source:source||"manual",status:"draft",createdAt:Date.now(),supplier:sup,invoice:data.invoice||"",date:data.date||new Date().toISOString().slice(0,10),ref:data.ref||"",total:num(data.total),
+    lines:(data.lines||[]).map(l=>{const L={id:uid("x"),code:String(l.code||""),lot:String(l.lot||""),desc:String(l.desc||""),cases:num(l.cases),qty:num(l.qty),unit:(l.unit||"").toLowerCase()||"units",price:num(l.price),amount:num(l.amount),expiry:"",shelf:0};L.itemId=matchItem(L,sup);return L;})};
+  save();return id;}
+function newReceiptManual(){sheet(`<h3 class="st">New delivery</h3>
+  <p style="margin:-6px 0 0;color:var(--mute)">Paste the invoice text, or start an empty delivery and add lines by hand.</p>
+  <label class="field">Invoice text (optional)<textarea id="pTxt" style="height:150px" placeholder="Tip: open the invoice photo in Photos, press and hold on the text, Select All, Copy, then paste here."></textarea></label>
+  <button class="btn b-pri" id="pGo">Create delivery</button><button class="btn b-sec" id="pCancel">Cancel</button>`);
+  $("pCancel").onclick=closeSheet;
+  $("pGo").onclick=()=>{const d=parseInvoiceText($("pTxt").value);const id=newReceipt(d,"text");ordSeg="rc";render();openReceipt(id);if($("pTxt")&&!d.lines.length&&d.raw)toast("No item lines recognised — add them below");};}
+function parseInvoiceText(txt){const out={lines:[],raw:!!String(txt||"").trim()};const T=String(txt||"");
+  const inv=T.match(/(?:invoice|facture)[^\n\d]{0,30}(?:no\.?|#)?\s*[:\n]?\s*(\d{4,})/i);if(inv)out.invoice=inv[1];
+  const tot=T.match(/total[^\n\d]{0,20}([\d.,]{3,})\s*$/im);if(tot)out.total=numIn(tot[1]);
+  const re=/^\s*(?:\d{1,3}\s+)?([A-Z0-9-]{2,12})\s+([A-Z0-9-]{3,14})\s+(.+?)\s+(\d{1,4})\s+([\d.,]+)\s*(kg|lb|lbs|un|unit|ea|pcs?)?\s+([\d.,]+)\s+([\d.,]+)\s*$/i;
+  for(const line of T.split(/\n/)){const m=line.match(re);if(m)out.lines.push({code:m[1],lot:m[2],desc:m[3],cases:+m[4],qty:numIn(m[5]),unit:(m[6]||"kg").toLowerCase().replace("lbs","lb"),price:numIn(m[7]),amount:numIn(m[8])});}
+  return out;}
+async function toJpegB64(file,max){const url=URL.createObjectURL(file),img=new Image();img.src=url;await img.decode();const k=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));
+  const c=document.createElement("canvas");c.width=Math.round(img.naturalWidth*k);c.height=Math.round(img.naturalHeight*k);c.getContext("2d").drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);return c.toDataURL("image/jpeg",.85).split(",")[1];}
+const AIPROMPT=`You are reading a supplier invoice or delivery note photographed on a phone. Extract it as JSON only (no prose, no code fences) with this shape:
+{"supplier":string,"invoice":string,"date":"YYYY-MM-DD","ref":string,"total":number,"lines":[{"code":string,"lot":string,"desc":string,"cases":number,"qty":number,"unit":"kg"|"lb"|"units","price":number,"amount":number}]}
+Rules: "supplier" is the company that issued the invoice (not the customer). "ref" is the customer PO number or order number if shown. For each item line: "code" = product number, "lot" = lot/batch number, "cases" = number of packages/boxes (Pack/Emb.), "qty" = billed quantity, "unit" = its unit, "price" = unit price, "amount" = line total. Numbers must be plain numbers without thousands separators. Use "" or 0 when a field is missing. Do not invent lines.`;
+async function invoicePhoto(e){const f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;
+  let key="";try{key=localStorage.getItem(AIKEY)||"";}catch(_){}
+  if(!key){sheet(`<h3 class="st">Turn on invoice reading</h3><p style="margin:-6px 0 0;color:var(--mute);line-height:1.5">Reading an invoice photo uses Claude through your own Anthropic API key. Each invoice costs a small amount on your Anthropic account. The photo is sent to Anthropic only when you scan an invoice.</p>
+    <label class="field">Anthropic API key<input id="kIn" type="password" autocomplete="off" placeholder="sk-ant-…"></label><p style="color:var(--mute);font-size:12px;margin:-6px 2px 0">Create one at console.anthropic.com → API keys. It is stored only on this iPhone.</p>
+    <button class="btn b-pri" id="kSave">Save key and read invoice</button><button class="btn b-sec" id="kNo">Enter the invoice by hand instead</button>`);
+    $("kNo").onclick=newReceiptManual;$("kSave").onclick=()=>{const k=$("kIn").value.trim();if(!/^sk-/.test(k)){toast("That doesn't look like an API key");return;}try{localStorage.setItem(AIKEY,k);}catch(_){}readInvoiceAI(f,k);};return;}
+  readInvoiceAI(f,key);}
+async function readInvoiceAI(file,key){sheet(`<div style="text-align:center;padding:30px 10px"><div class="st" style="font-size:20px">Reading invoice…</div><p style="color:var(--mute)">This usually takes 10–20 seconds.</p></div>`);
+  try{const b64=await toJpegB64(file,2000);
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"content-type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+      body:JSON.stringify({model:"claude-sonnet-5-5",max_tokens:4000,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:"image/jpeg",data:b64}},{type:"text",text:AIPROMPT}]}]})});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok){const m=j&&j.error&&j.error.message||("HTTP "+r.status);closeSheet();scanMsg(r.status===401?"Your API key was rejected. Check it in More › Invoice reading.":"Couldn't read the invoice: "+m);return;}
+    const t=(j.content||[]).filter(c=>c.type==="text").map(c=>c.text).join("").replace(/^```(?:json)?|```$/gm,"").trim();
+    const d=JSON.parse(t.slice(t.indexOf("{"),t.lastIndexOf("}")+1));
+    d.lines=(d.lines||[]).map(l=>({...l,qty:numIn(l.qty),price:numIn(l.price),amount:numIn(l.amount),cases:numIn(l.cases)}));d.total=numIn(d.total);
+    const id=newReceipt(d,"ai");ordSeg="rc";setTab("ord");openReceipt(id);
+  }catch(err){closeSheet();scanMsg(navigator.onLine===false?"Reading an invoice needs internet. Try again when you're online, or enter it by hand.":"Couldn't read the invoice. Try a straighter, brighter photo, or enter it by hand.");}}
+function openReceipt(id){const R=D.receipts[id];if(!R)return;const done=R.status==="done",its=items();
+  const sum=R.lines.reduce((a,l)=>a+num(l.amount||num(l.qty)*num(l.price)),0),diff=num(R.total)?Math.abs(sum-num(R.total)):0;
+  const opt=sel=>`<option value="">＋ Create new item</option>`+its.map(i=>`<option value="${esc(i.id)}" ${i.id===sel?"selected":""}>${esc(i.name)}</option>`).join("");
+  sheet(`<div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div><h3 class="st">Delivery</h3><p style="margin:4px 0 0;color:var(--mute);font-size:13px">${R.source==="ai"?"Read from invoice photo by AI":"Entered on this phone"}</p></div>${done?'<span class="pill p-ok">Put away</span>':'<span class="pill p-low">To check</span>'}</div>
+  ${!done&&R.source==="ai"?'<div class="warnbox">Check every line against the paper invoice before putting it away. Fix anything that was misread.</div>':""}
+  <div class="g2"><label class="field">Supplier<input id="rSup" value="${esc(R.supplier)}" ${done?"disabled":""}></label><label class="field">Invoice no.<input id="rInv" class="mono" value="${esc(R.invoice)}" ${done?"disabled":""}></label>
+  <label class="field">Date<input id="rDate" type="date" value="${esc(R.date)}" ${done?"disabled":""}></label><label class="field">PO / reference<input id="rRef" value="${esc(R.ref)}" ${done?"disabled":""}></label></div>
+  ${R.lines.map((l,k)=>{const inv=Math.max(0,num(l.qty)-num(l.shelf));return `<div class="rline" data-k="${k}">
+    <div class="rh"><div><b>${esc(l.desc||"New line")}</b><br><small>${esc(l.code||"no product no.")}</small></div>${done?"":`<button class="btn sm b-dan" data-del="${k}" aria-label="Remove line">✕</button>`}</div>
+    ${done?"":`<label class="mini">Description<input data-f="desc" value="${esc(l.desc)}"></label><label class="mini">Goes into stock as<select data-f="itemId">${opt(l.itemId)}</select></label>`}
+    <div class="g3"><label class="mini">Product no.<input data-f="code" class="mono" value="${esc(l.code)}" ${done?"disabled":""}></label><label class="mini">Lot<input data-f="lot" class="mono" value="${esc(l.lot)}" ${done?"disabled":""}></label><label class="mini">Expiry<input data-f="expiry" type="date" value="${esc(l.expiry||"")}" ${done?"disabled":""}></label></div>
+    <div class="g3"><label class="mini">Quantity<input data-f="qty" type="number" inputmode="decimal" step="any" value="${l.qty}" ${done?"disabled":""}></label><label class="mini">Unit<select data-f="unit" ${done?"disabled":""}>${["kg","lb","units"].map(u=>`<option ${u===l.unit?"selected":""}>${u}</option>`).join("")}</select></label><label class="mini">Cases<input data-f="cases" type="number" inputmode="numeric" value="${l.cases||""}" ${done?"disabled":""}></label></div>
+    <div class="g3"><label class="mini">Price / ${esc(l.unit)}<input data-f="price" type="number" inputmode="decimal" step="any" value="${l.price||""}" ${done?"disabled":""}></label><label class="mini" style="grid-column:span 2">Amount<input value="${money(num(l.amount)||num(l.qty)*num(l.price))}" disabled></label></div>
+    <div class="dest"><label class="mini">To inventory (${esc(l.unit)})<input data-f="inv" type="number" inputmode="decimal" step="any" value="${fmt(inv)}" ${done?"disabled":""}></label><label class="mini">To shelf (${esc(l.unit)})<input data-f="shelf" type="number" inputmode="decimal" step="any" value="${fmt(num(l.shelf))}" ${done?"disabled":""}></label>
+      ${done?"":`<div class="q"><button data-sp="inv" data-k="${k}">All inventory</button><button data-sp="shelf" data-k="${k}">All shelf</button><button data-sp="half" data-k="${k}">Half / half</button></div>`}</div></div>`;}).join("")}
+  ${done?"":'<button class="btn b-sec" id="rAdd">＋ Add a line</button>'}
+  <div class="panel"><div class="kv"><span>Lines total</span><b class="mono">${money(sum)}</b>${num(R.total)?`<span>Invoice total</span><b class="mono">${money(num(R.total))}</b>`:""}<span>Weight / qty</span><b class="mono">${fmt(R.lines.reduce((a,l)=>a+num(l.qty),0))}</b><span>Cases</span><b class="mono">${fmt(R.lines.reduce((a,l)=>a+num(l.cases),0))}</b></div></div>
+  ${num(R.total)&&diff>0.05?`<div class="warnbox">Lines add up to ${money(sum)} but the invoice total is ${money(num(R.total))}. A line may be missing or misread.</div>`:num(R.total)?'<div class="ok-box">Lines match the invoice total.</div>':""}
+  ${done?"":'<button class="btn b-in" id="rPut">Put away into stock</button>'}
+  <button class="btn b-dan" id="rDel">Delete delivery</button><div id="rcf"></div>`);
+  const S=$("sheetRoot");
+  const hdr=()=>{if(done)return;R.supplier=$("rSup").value.trim();R.invoice=$("rInv").value.trim();R.date=$("rDate").value;R.ref=$("rRef").value.trim();save();};
+  ["rSup","rInv","rDate","rRef"].forEach(x=>$(x).addEventListener("change",hdr));
+  S.querySelectorAll(".rline [data-f]").forEach(inp=>inp.addEventListener("change",()=>{const k=+inp.closest(".rline").dataset.k,L=R.lines[k],f=inp.dataset.f,v=inp.value;
+    if(f==="inv"){L.shelf=Math.max(0,num(L.qty)-num(v));}else if(f==="shelf"){L.shelf=Math.min(num(L.qty),Math.max(0,num(v)));}
+    else if(["qty","price","cases"].includes(f)){L[f]=num(v);L.amount=Math.round(num(L.qty)*num(L.price)*100)/100;if(f==="qty")L.shelf=Math.min(num(L.shelf),num(L.qty));}
+    else L[f]=v;if(f==="code"||f==="desc"){if(!L.itemId)L.itemId=matchItem(L,R.supplier);}
+    save();hdr();openReceipt(id);}));
+  S.querySelectorAll("[data-sp]").forEach(b=>b.onclick=()=>{const L=R.lines[+b.dataset.k];L.shelf=b.dataset.sp==="inv"?0:b.dataset.sp==="shelf"?num(L.qty):Math.round(num(L.qty)/2*1000)/1000;save();hdr();openReceipt(id);});
+  S.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{R.lines.splice(+b.dataset.del,1);save();hdr();openReceipt(id);});
+  if($("rAdd"))$("rAdd").onclick=()=>{hdr();R.lines.push({id:uid("x"),code:"",lot:"",desc:"",cases:0,qty:0,unit:"kg",price:0,amount:0,expiry:"",shelf:0,itemId:""});save();openReceipt(id);};
+  if($("rPut"))$("rPut").onclick=()=>{hdr();const bad=R.lines.filter(l=>num(l.qty)<=0||!(l.itemId||l.desc));if(!R.lines.length||bad.length){toast(!R.lines.length?"Add at least one line":"Each line needs a description and a quantity");return;}
+    let sup=Object.values(D.suppliers).find(s=>nkey(s.name)===nkey(R.supplier));if(!sup&&R.supplier){const sid=uid("s");sup=D.suppliers[sid]={id:sid,name:R.supplier,lead:3};}
+    const sk=nkey(R.supplier);let nItems=0,nShelf=0;
+    for(const L of R.lines){let it=L.itemId&&D.items[L.itemId];
+      if(!it){const iid=uid("i");it=D.items[iid]={id:iid,name:titleCase(L.desc),unit:L.unit,cost:num(L.price),supplierId:sup?sup.id:"",lots:[],updatedAt:Date.now()};L.itemId=iid;}
+      it.supCodes=it.supCodes||{};if(L.code&&sk)it.supCodes[sk]=L.code;if(!it.invName)it.invName=L.desc;if(sup&&!it.supplierId)it.supplierId=sup.id;
+      const sh=Math.min(num(L.shelf),num(L.qty)),inv=num(L.qty)-sh,note="Invoice "+(R.invoice||"");
+      if(inv>0)receive(it,inv,L.lot,L.expiry,note,"",num(L.price),sh>0?Math.round(num(L.cases)*inv/num(L.qty)):num(L.cases),"");
+      if(sh>0){receive(it,sh,L.lot,L.expiry,note,"",num(L.price),inv>0?num(L.cases)-Math.round(num(L.cases)*inv/num(L.qty)):num(L.cases),"shelf");nShelf++;}
+      nItems++;}
+    R.status="done";R.doneAt=Date.now();save();render();closeSheet();toast("Put away "+nItems+" line"+(nItems===1?"":"s")+(nShelf?" · "+nShelf+" to shelf":""));};
+  $("rDel").onclick=()=>{$("rcf").innerHTML=`<div class="confirm"><span style="flex:1">Delete this delivery record?${done?" Stock already put away stays.":""}</span><button class="btn sm b-out" id="yes">Delete</button><button class="btn sm b-sec" id="no">Keep</button></div>`;$("no").onclick=()=>$("rcf").innerHTML="";$("yes").onclick=()=>{delete D.receipts[id];save();render();closeSheet();toast("Delivery deleted");};};
 }
 function newPO(sid,lines){const id=uid("p"),d=new Date(),n=Object.values(D.pos).filter(p=>new Date(p.createdAt).toDateString()===d.toDateString()).length+1;
   D.pos[id]={id,number:"PO-"+d.toISOString().slice(2,10).replace(/-/g,"")+"-"+String(n).padStart(2,"0"),supplierId:sid||"",status:"draft",lines,createdAt:Date.now(),note:""};save();return id;}
@@ -902,7 +1026,7 @@ async function shareFile(name,type,data){const file=new File([data],name,{type})
 const cell=v=>{const s=String(v??"");return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;};
 $("exportBtn").onclick=()=>{const {cls}=abcClass();
   let csv="\ufeffName,Code,Category,Supplier,Selling price,Description,Quantity,Unit,Reorder at,Order up to,Status,ABC,Cost per unit,Stock value,Avg use per day,Days left,Location,Next expiry\n"+items().map(i=>{const dl=daysLeft(i);return [i.name,i.code,i.category,supplierOf(i)?.name||"",num(i.price)||"",i.description||"",qty(i),i.unit,num(i.reorder)||"",num(i.par)||"",status(i).toUpperCase(),cls[i.id],num(i.cost)||"",num(i.cost)?value(i).toFixed(2):"",fmt(avgDaily(i.id)),dl===Infinity?"":Math.round(dl),i.location,nearestExp(i)].map(cell).join(",");}).join("\n");
-  csv+="\n\nLots\nItem,Lot,Quantity,Expiry,Received\n"+items().flatMap(i=>lotsFIFO(i).map(l=>[i.name,l.lot,l.qty,l.expiry,new Date(l.at).toLocaleDateString()].map(cell).join(","))).join("\n");
+  csv+="\n\nLots\nItem,Lot,Location,Quantity,Expiry,Received\n"+items().flatMap(i=>lotsFIFO(i).map(l=>[i.name,l.lot,l.loc==="shelf"?"Shelf":"Inventory",l.qty,l.expiry,new Date(l.at).toLocaleDateString()].map(cell).join(","))).join("\n");
   csv+="\n\nHistory\nWhen,Item,Code,Change,Type,Lot,Note\n"+D.moves.map(m=>[new Date(m.at).toLocaleString(),m.name,m.code,m.delta,m.type,m.lot,m.note].map(cell).join(",")).join("\n");
   shareFile("stock-"+new Date().toISOString().slice(0,10)+".csv","text/csv",csv);};
 $("backupBtn").onclick=async()=>{const photos={};for(const i of items())if(i.photo){const b=await PH.blob(i.id);if(b)photos[i.id]=await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(b);});}
@@ -910,7 +1034,7 @@ $("backupBtn").onclick=async()=>{const photos={};for(const i of items())if(i.pho
 $("restoreIn").addEventListener("change",async e=>{const f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;
   try{const j=JSON.parse(await f.text());const d=j&&j.data;if(!d||!d.items)throw 0;
     $("moreCf").innerHTML=`<div class="confirm" style="margin-top:12px"><span style="flex:1">Replace everything on this phone with the backup from ${new Date(j.savedAt||Date.now()).toLocaleDateString()} (${Object.keys(d.items).length} items)?</span><button class="btn sm b-out" id="yes">Replace</button><button class="btn sm b-sec" id="no">Cancel</button></div>`;
-    $("no").onclick=()=>$("moreCf").innerHTML="";$("yes").onclick=async()=>{D={items:{},suppliers:{},pos:{},moves:[],labels:{},...d};for(const [id,du] of Object.entries(j.photos||{})){try{await PH.put(id,await (await fetch(du)).blob());}catch(e){}}save();$("moreCf").innerHTML="";render();toast("Backup restored");};
+    $("no").onclick=()=>$("moreCf").innerHTML="";$("yes").onclick=async()=>{D={items:{},suppliers:{},pos:{},moves:[],labels:{},receipts:{},...d};for(const [id,du] of Object.entries(j.photos||{})){try{await PH.put(id,await (await fetch(du)).blob());}catch(e){}}save();$("moreCf").innerHTML="";render();toast("Backup restored");};
   }catch(err){toast("That file isn't a Stockroom backup");}});
 $("typeCode").onclick=()=>{sheet(`<h3 class="st">Enter a barcode</h3><input class="inp mono" id="tcIn" placeholder="e.g. (01)00012345678905(3102)012345(10)ABC" autocomplete="off"><p style="color:var(--mute);font-size:13px;margin:0">Tip: if a label won't scan, open the iPhone Camera, point at the numbers under the barcode, tap the Live Text icon, copy them and paste here.</p><button class="btn b-pri" id="tcGo">Look up</button>`);
   $("tcIn").focus();$("tcGo").onclick=()=>{const v=$("tcIn").value.replace(/\s+/g,"").replace(/\(([0-9oO]{2,4})\)/g,(m,x)=>"("+x.replace(/[oO]/g,"0")+")");closeSheet();handleCode(v,"");};};
@@ -919,6 +1043,8 @@ $("clearEx").onclick=()=>{$("moreCf").innerHTML=`<div class="confirm" style="mar
     for(const s of Object.values(D.suppliers))if(s.example)delete D.suppliers[s.id];for(const p of Object.values(D.pos))if(p.example)delete D.pos[p.id];D.moves=D.moves.filter(m=>!ids.has(m.itemId));save();$("moreCf").innerHTML="";render();toast("Example data removed");};};
 
 try{$("sigIn").value=localStorage.getItem("stockroom-sig")||"";}catch(e){}
+try{$("aiKeyIn").value=localStorage.getItem(AIKEY)||"";}catch(e){}
+$("aiKeyIn").addEventListener("change",e=>{try{const v=e.target.value.trim();if(v)localStorage.setItem(AIKEY,v);else localStorage.removeItem(AIKEY);}catch(_){}toast(e.target.value.trim()?"API key saved":"API key removed");});
 $("sigIn").addEventListener("change",e=>{try{localStorage.setItem("stockroom-sig",e.target.value.trim());}catch(_){}toast("Signature saved");});
 function applyLook(k){document.documentElement.dataset.look=k;try{localStorage.setItem("stockroom-look",k);}catch(e){}
   const tc={violet:"#f3f5fb",ios:"#f2f2f7",emerald:"#f4f8f6",bold:"#fbf7f4"}[k]||"#f3f5fb";document.querySelector('meta[name="theme-color"]').setAttribute("content",tc);
