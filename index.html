@@ -196,7 +196,56 @@ h2{font-family:var(--f-disp);font-stretch:112%;font-size:17px;font-weight:800;ma
 .round.x{background:#fff;color:#000}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(106px + env(safe-area-inset-bottom,0px));background:#101731;color:#fff;padding:11px 18px;border-radius:99px;font-weight:700;z-index:50;max-width:calc(100% - 36px);text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.4)}
 .msg{margin-top:12px;border-radius:14px;padding:12px 14px;font-size:14px;font-weight:600;background:#ffe1e7;color:var(--out)}
+
+/* ---- alternative looks (More › Appearance) ---- */
+html[data-look="ios"]{--bg:#f2f2f7;--s1:#fff;--s2:#f2f2f7;--s3:#e5e5ea;--ink:#000;--mute:#6e6e73;--dim:#8e8e93;--line:rgba(60,60,67,.12);--line2:rgba(60,60,67,.18);--a1:#007aff;--grad:linear-gradient(#007aff,#007aff);--f-disp:-apple-system,"SF Pro Display",system-ui,sans-serif;--f-body:-apple-system,"SF Pro Text",system-ui,sans-serif}
+html[data-look="ios"] .glow{display:none}
+html[data-look="ios"] h1{font-stretch:100%!important;font-weight:800;font-size:34px}
+html[data-look="ios"] .hero{background:#fff!important;color:#000!important;box-shadow:none!important;border-radius:14px!important}
+html[data-look="ios"] .hero::after{display:none}
+html[data-look="ios"] .tile{background:#f2f2f7!important;border:0!important;color:#000!important}
+html[data-look="ios"] .tile span{color:#6e6e73!important}
+html[data-look="ios"] .ring span{color:#6e6e73!important}
+html[data-look="ios"] .ring circle:first-of-type{stroke:#e5e5ea!important}
+html[data-look="ios"] #ringArc{stroke:#34c759!important}
+html[data-look="ios"] .list{gap:0;background:#fff;border-radius:14px;overflow:hidden}
+html[data-look="ios"] .card{border-radius:0!important;box-shadow:none!important;border:0!important;border-bottom:1px solid rgba(60,60,67,.12)!important}
+html[data-look="ios"] .badge{border-radius:10px!important}
+html[data-look="ios"] .badge::after{display:none}
+html[data-look="ios"] .bar{height:4px}
+html[data-look="ios"] .chip[aria-pressed="true"],html[data-look="ios"] .seg button[aria-pressed="true"]{background:#007aff!important}
+html[data-look="ios"] .fab{background:#007aff!important;border-radius:50%!important;box-shadow:0 6px 16px rgba(0,122,255,.35),0 0 0 6px #fff!important}
+html[data-look="ios"] .card,html[data-look="ios"] .kpi,html[data-look="ios"] .panel,html[data-look="ios"] .search,html[data-look="ios"] .seg,html[data-look="ios"] .chip{box-shadow:none!important}
+html[data-look="emerald"]{--bg:#f4f8f6;--s1:#fff;--s2:#eef5f1;--s3:#dde9e3;--ink:#0b2a20;--mute:#4d6b60;--dim:#86a198;--line:rgba(11,42,32,.08);--line2:rgba(11,42,32,.14);--a1:#0f8a5f;--grad:linear-gradient(135deg,#0f8a5f,#14b885)}
+html[data-look="emerald"] .glow{background:radial-gradient(closest-side,rgba(20,184,133,.18),transparent)!important}
+html[data-look="emerald"] .hero{background:linear-gradient(150deg,#0b3d2c,#0f6b4a 60%,#14946a)!important;box-shadow:0 14px 34px rgba(15,107,74,.3)!important}
+html[data-look="emerald"] #ringArc{stroke:#7ef2c3!important}
+html[data-look="emerald"] .badge{border-radius:50%!important}
+html[data-look="emerald"] .chip[aria-pressed="true"],html[data-look="emerald"] .seg button[aria-pressed="true"]{background:#0b3d2c!important}
+html[data-look="emerald"] .fab{background:linear-gradient(135deg,#0f8a5f,#14b885)!important;box-shadow:0 12px 26px rgba(15,138,95,.4),0 0 0 6px #fff!important}
+html[data-look="emerald"] .tab[aria-current="page"] svg{color:#0f8a5f!important}
+html[data-look="bold"]{--bg:#fbf7f4;--s1:#fff;--s2:#f6efea;--s3:#ece2da;--ink:#1c1530;--mute:#6b6178;--line:rgba(28,21,48,.08);--line2:rgba(28,21,48,.14);--grad:linear-gradient(135deg,#ff6b4a,#ff3d7f)}
+html[data-look="bold"] .glow{background:radial-gradient(closest-side,rgba(255,107,74,.18),transparent)!important}
+html[data-look="bold"] .hero{background:#1c1530!important;box-shadow:0 14px 30px rgba(28,21,48,.25)!important;border-radius:30px!important}
+html[data-look="bold"] .tile:nth-child(1){background:#ff6b4a!important}
+html[data-look="bold"] .tile:nth-child(2){background:#6c5ce7!important}
+html[data-look="bold"] .tile:nth-child(3){background:#ffb020!important;color:#1c1530!important}
+html[data-look="bold"] .tile:nth-child(4){background:#00b894!important}
+html[data-look="bold"] .tile:nth-child(3) span{color:rgba(28,21,48,.75)!important}
+html[data-look="bold"] .tile{border:0!important}
+html[data-look="bold"] #ringArc{stroke:#ff6b4a!important}
+html[data-look="bold"] .card{border-left:6px solid #ff6b4a!important}
+html[data-look="bold"] .card:nth-child(3n+2){border-left-color:#6c5ce7!important}
+html[data-look="bold"] .card:nth-child(3n){border-left-color:#00b894!important}
+html[data-look="bold"] .chip[aria-pressed="true"],html[data-look="bold"] .seg button[aria-pressed="true"]{background:#1c1530!important}
+html[data-look="bold"] .fab{background:linear-gradient(135deg,#ff6b4a,#ff3d7f)!important;border-radius:50%!important;box-shadow:0 12px 26px rgba(255,61,127,.4),0 0 0 6px #fff!important}
+html[data-look="bold"] .tab[aria-current="page"] svg{color:#ff3d7f!important}
+.looks{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.lk{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--mute)}
+.lk i{width:100%;aspect-ratio:1;max-width:72px;border-radius:18px;display:block;border:3px solid transparent;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.lk[aria-pressed="true"]{color:var(--ink)}.lk[aria-pressed="true"] i{border-color:var(--ink)}
 </style>
+<script>try{document.documentElement.dataset.look=localStorage.getItem("stockroom-look")||"violet"}catch(e){}</script>
 </head><body>
 <div class="glow"></div>
 <main class="gut">
@@ -248,7 +297,14 @@ h2{font-family:var(--f-disp);font-stretch:112%;font-size:17px;font-weight:800;ma
 <!-- ============ MORE ============ -->
 <section class="view" id="v-more" hidden>
   <div class="hd"><div><div class="eyebrow">Stockroom</div><h1>More</h1></div></div>
-  <div class="sect" style="margin-top:4px"><h2>Activity</h2><small id="histCount"></small></div>
+  <div class="sect" style="margin-top:4px"><h2>Appearance</h2></div>
+  <div class="panel"><div class="looks" id="looks">
+    <button class="lk" data-lk="violet"><i style="background:linear-gradient(140deg,#4f6bff,#8b4dff)"></i>Violet</button>
+    <button class="lk" data-lk="ios"><i style="background:linear-gradient(180deg,#fff 0 55%,#007aff 55%)"></i>iOS</button>
+    <button class="lk" data-lk="emerald"><i style="background:linear-gradient(150deg,#0b3d2c,#14946a)"></i>Emerald</button>
+    <button class="lk" data-lk="bold"><i style="background:conic-gradient(#ff6b4a 0 25%,#6c5ce7 0 50%,#ffb020 0 75%,#00b894 0)"></i>Bold</button>
+  </div></div>
+  <div class="sect"><h2>Activity</h2><small id="histCount"></small></div>
   <div class="panel" id="hist" style="padding:4px 16px 10px"></div>
   <div class="sect"><h2>Tools</h2></div>
   <div class="panel" style="padding:0">
@@ -637,6 +693,11 @@ $("clearEx").onclick=()=>{$("moreCf").innerHTML=`<div class="confirm" style="mar
   $("no").onclick=()=>$("moreCf").innerHTML="";$("yes").onclick=()=>{const ids=new Set(Object.values(D.items).filter(i=>i.example).map(i=>i.id));for(const id of ids)delete D.items[id];
     for(const s of Object.values(D.suppliers))if(s.example)delete D.suppliers[s.id];for(const p of Object.values(D.pos))if(p.example)delete D.pos[p.id];D.moves=D.moves.filter(m=>!ids.has(m.itemId));save();$("moreCf").innerHTML="";render();toast("Example data removed");};};
 
+function applyLook(k){document.documentElement.dataset.look=k;try{localStorage.setItem("stockroom-look",k);}catch(e){}
+  const tc={violet:"#f3f5fb",ios:"#f2f2f7",emerald:"#f4f8f6",bold:"#fbf7f4"}[k]||"#f3f5fb";document.querySelector('meta[name="theme-color"]').setAttribute("content",tc);
+  document.querySelectorAll(".lk").forEach(b=>b.setAttribute("aria-pressed",b.dataset.lk===k));}
+$("looks").onclick=e=>{const b=e.target.closest(".lk");if(b){applyLook(b.dataset.lk);toast("Look changed");}};
+applyLook(document.documentElement.dataset.look||"violet");
 $("today").textContent=new Date().toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"});
 render();
 if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
