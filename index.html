@@ -103,7 +103,7 @@ label.f{display:flex;flex-direction:column;gap:4px;font-size:12px;text-transform
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:99px;font-weight:600;z-index:30;max-width:calc(100% - 32px);text-align:center}
 .live{position:fixed;inset:0;background:#000;z-index:40;display:flex;flex-direction:column}
 .live video{flex:1;width:100%;height:100%;object-fit:cover;min-height:0}
-.live .frame{position:absolute;left:12%;right:12%;top:32%;height:22%;border:3px solid var(--accent);border-radius:14px;box-shadow:0 0 0 9999px rgba(0,0,0,.35);pointer-events:none}
+.live .frame{position:absolute;left:8%;right:8%;top:30%;height:30%;border:3px solid var(--accent);border-radius:14px;box-shadow:0 0 0 9999px rgba(0,0,0,.35);pointer-events:none}
 .live .bar{position:absolute;left:0;right:0;bottom:0;display:flex;gap:10px;justify-content:center;padding:16px max(16px,env(safe-area-inset-left,0px)) calc(20px + env(safe-area-inset-bottom,0px))}
 .live .bar button{background:rgba(255,255,255,.92);color:#111;border:0;min-width:110px;min-height:48px}
 .live .tip{position:absolute;top:calc(16px + env(safe-area-inset-top,0px));left:16px;right:16px;color:#fff;text-align:center;font-weight:600;text-shadow:0 1px 3px #000}
@@ -322,26 +322,58 @@ $("cam").addEventListener("change",async e=>{
 });
 
 /* ---------- live scanner ---------- */
-let reader=null, stream=null;
-function stopLive(){ try{reader&&reader.reset();}catch(e){} reader=null; const v=$("vid"); try{(v.srcObject||stream)&&(v.srcObject||stream).getTracks().forEach(t=>t.stop());}catch(e){} v.srcObject=null; $("live").hidden=true; }
+let stream=null, scanning=false, scanTimer=null, misses=0;
+function stopLive(){ scanning=false; clearTimeout(scanTimer); try{stream&&stream.getTracks().forEach(t=>t.stop());}catch(e){} stream=null; const v=$("vid"); v.srcObject=null; $("live").hidden=true; $("torch").hidden=true; }
 $("liveClose").onclick=stopLive;
+function makeReader(){
+  const Z=window.ZXing, hints=new Map(), F=Z.BarcodeFormat;
+  hints.set(Z.DecodeHintType.TRY_HARDER,true);
+  hints.set(Z.DecodeHintType.POSSIBLE_FORMATS,[F.EAN_13,F.EAN_8,F.UPC_A,F.UPC_E,F.CODE_128,F.CODE_39,F.CODE_93,F.ITF,F.CODABAR,F.QR_CODE,F.DATA_MATRIX,F.PDF_417,F.AZTEC]);
+  const r=new Z.MultiFormatReader(); r.setHints(hints); return r;
+}
+function tryDecode(r,cv){
+  const Z=window.ZXing, src=new Z.HTMLCanvasElementLuminanceSource(cv);
+  const attempts=[()=>new Z.HybridBinarizer(src),()=>new Z.GlobalHistogramBinarizer(src),()=>new Z.HybridBinarizer(src.rotateCounterClockwise())];
+  for(const mk of attempts){ try{ return r.decodeWithState(new Z.BinaryBitmap(mk())); }catch(e){} finally{ try{r.reset();}catch(_){} } }
+  return null;
+}
 $("liveBtn").onclick=async()=>{
   scanMsg("");
   if(!window.ZXing){scanMsg("The barcode reader didn't load. Connect to the internet once, then try again.",true);return;}
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){scanMsg("Live camera isn't available here. Use a photo instead.",true);return;}
-  $("live").hidden=false;
-  const Z=window.ZXing, hints=new Map(); hints.set(Z.DecodeHintType.TRY_HARDER,true);
-  reader=new Z.BrowserMultiFormatReader(hints,250);
+  $("live").hidden=false; $("liveTip").textContent="Starting camera…";
   try{
-    await reader.decodeFromConstraints({video:{facingMode:{ideal:"environment"},width:{ideal:1280},height:{ideal:720}}},$("vid"),(res,err)=>{
-      if(res){ const code=res.getText(); if(navigator.vibrate)try{navigator.vibrate(40)}catch(_){}; stopLive(); handleCode(code); }
-    });
-    stream=$("vid").srcObject;
-    const track=stream&&stream.getVideoTracks()[0]; const caps=track&&track.getCapabilities?track.getCapabilities():{};
-    if(caps.torch){ let on=false; $("torch").hidden=false; $("torch").onclick=()=>{on=!on;track.applyConstraints({advanced:[{torch:on}]}).catch(()=>{});}; }
-  }catch(e){ stopLive(); scanMsg(e&&e.name==="NotAllowedError"?"Camera access was blocked. Allow it in Settings › Safari › Camera, then try again.":"Couldn't start the camera. Use a photo instead.",true); }
+    stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:"environment"},width:{ideal:1920},height:{ideal:1080}}});
+  }catch(e){ stopLive(); scanMsg(e&&e.name==="NotAllowedError"?"Camera access was blocked. On your iPhone go to Settings › Safari › Camera and choose Allow (or Ask), then try again.":"Couldn't start the camera ("+(e&&e.name||"error")+"). Use a photo instead.",true); return; }
+  const v=$("vid"); v.setAttribute("playsinline",""); v.muted=true; v.srcObject=stream;
+  try{ await v.play(); }catch(e){}
+  const track=stream.getVideoTracks()[0];
+  try{ const caps=track.getCapabilities?track.getCapabilities():{};
+    if(caps.focusMode&&caps.focusMode.includes("continuous")) track.applyConstraints({advanced:[{focusMode:"continuous"}]}).catch(()=>{});
+    if(caps.torch){ let on=false; $("torch").hidden=false; $("torch").onclick=()=>{on=!on;track.applyConstraints({advanced:[{torch:on}]}).catch(()=>{});}; } }catch(e){}
+  $("liveTip").textContent="Hold the barcode inside the box, about 10–20 cm away";
+  const r=makeReader(), cv=$("cv"), ctx=cv.getContext("2d",{willReadFrequently:true});
+  scanning=true; misses=0;
+  const loop=()=>{
+    if(!scanning)return;
+    const w=v.videoWidth,h=v.videoHeight;
+    if(w&&h){
+      // pass 1: centre band (where the box is); pass 2 every 4th try: whole frame
+      const full=(misses%4===3);
+      const sx=full?0:Math.round(w*0.05), sw=full?w:Math.round(w*0.9);
+      const sy=full?0:Math.round(h*0.2), sh=full?h:Math.round(h*0.6);
+      const scale=Math.min(1,1280/sw);
+      cv.width=Math.round(sw*scale); cv.height=Math.round(sh*scale);
+      ctx.drawImage(v,sx,sy,sw,sh,0,0,cv.width,cv.height);
+      const res=tryDecode(r,cv);
+      if(res){ const code=res.getText(); if(navigator.vibrate)try{navigator.vibrate(40)}catch(_){}; stopLive(); handleCode(code); return; }
+      misses++;
+      if(misses===40) $("liveTip").textContent="Still looking… try more light, or move a little closer / further";
+    }
+    scanTimer=setTimeout(loop,120);
+  };
+  loop();
 };
-
 /* ---------- export ---------- */
 $("exportBtn").onclick=async()=>{
   const cell=v=>{const s=String(v??"");return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;};
