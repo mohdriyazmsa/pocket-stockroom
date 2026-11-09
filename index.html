@@ -341,6 +341,7 @@ html[data-look="bold"] .tab[aria-current="page"] svg{color:#ff3d7f!important}
     <button class="row" id="backupBtn"><span class="ri"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3z"/><path d="M8 4v5h8V4"/></svg></span><div>Back up everything<small>Save a full backup file to Files or iCloud</small></div></button>
     <label class="row" for="restoreIn"><span class="ri"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/></svg></span><div>Restore from backup<small>Replace this phone's data with a backup file</small></div><input id="restoreIn" type="file" accept=".json,application/json" hidden></label>
     <label class="row" for="cam"><span class="ri"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="6" width="18" height="14" rx="3"/><circle cx="12" cy="13" r="3.5"/></svg></span><div>Scan from a photo<small>If live scanning struggles</small></div><input id="cam" type="file" accept="image/*" capture="environment" hidden></label>
+    <button class="row" id="typeCode"><span class="ri"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="6" width="18" height="12" rx="3"/><path d="M7 10h.01M11 10h.01M15 10h.01M8 14h8"/></svg></span><div>Type or paste a barcode<small>Works with GS1 codes like (01)…(3103)…(17)…(10)…</small></div></button>
     <button class="row" id="clearEx"><span class="ri" style="background:#ffe1e7;color:var(--out)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></span><div>Remove example data<small>Delete the sample items, suppliers and orders</small></div></button>
   </div>
   <div id="moreCf"></div>
@@ -446,11 +447,12 @@ function abcClass(){const since=Date.now()-90*DAY,val={};for(const m of D.moves)
   const arr=Object.entries(val).sort((a,b)=>b[1]-a[1]),tot=arr.reduce((s,x)=>s+x[1],0)||1;let cum=0;const out={};
   for(const [id,v] of arr){const before=cum/tot;cum+=v;out[id]=before<.8?"A":before<.95?"B":"C";}for(const i of items())if(!out[i.id])out[i.id]="C";return {cls:out,val,tot};}
 function rec(m){D.moves.unshift({id:uid("m"),at:Date.now(),lot:"",note:"",...m});if(D.moves.length>5000)D.moves.length=5000;}
-function receive(i,n,lot,expiry,note,poId,cost){lot=(lot||"").trim()||("L-"+new Date().toISOString().slice(2,10).replace(/-/g,""));
+function receive(i,n,lot,expiry,note,poId,cost,pcs){lot=(lot||"").trim()||("L-"+new Date().toISOString().slice(2,10).replace(/-/g,""));
   const ex=(i.lots||[]).find(l=>l.lot===lot&&(l.expiry||"")===(expiry||""));
-  if(ex)ex.qty=num(ex.qty)+n;else{i.lots=i.lots||[];i.lots.push({id:uid("l"),lot,qty:n,expiry:expiry||"",at:Date.now()});}
+  if(ex){ex.qty=num(ex.qty)+n;if(pcs)ex.pcs=num(ex.pcs)+pcs;}else{i.lots=i.lots||[];i.lots.push({id:uid("l"),lot,qty:n,expiry:expiry||"",at:Date.now(),...(pcs?{pcs}:{})});}
   if(cost>0)i.cost=cost;i.updatedAt=Date.now();rec({itemId:i.id,name:i.name,code:i.code||"",delta:n,type:"receive",lot,note:note||"",poId:poId||""});}
-function consume(i,n,note){let left=n;const taken=[];for(const l of lotsFIFO(i)){if(left<=0)break;const t=Math.min(num(l.qty),left);l.qty=num(l.qty)-t;left-=t;taken.push(l.lot+"×"+fmt(t));}
+function consume(i,n,note,prefLot,pcs){let left=n;const taken=[];const order=lotsFIFO(i);if(prefLot){const k=order.findIndex(l=>l.lot===String(prefLot).trim());if(k>0)order.unshift(order.splice(k,1)[0]);}
+  for(const l of order){if(left<=0)break;const t=Math.min(num(l.qty),left);l.qty=Math.round((num(l.qty)-t)*1e6)/1e6;left-=t;if(pcs&&l.pcs){l.pcs=Math.max(0,l.pcs-pcs);pcs=0;}taken.push(l.lot+"×"+fmt(t));}
   i.lots=(i.lots||[]).filter(l=>num(l.qty)>0);i.updatedAt=Date.now();rec({itemId:i.id,name:i.name,code:i.code||"",delta:-n,type:"use",lot:taken.join(", "),note:note||""});return taken;}
 function setCount(i,n,note){const cur=qty(i);if(n===cur)return;if(n<cur)consume(i,cur-n,note||"Stock count");else receive(i,n-cur,"COUNT-ADJ","",note||"Stock count");D.moves[0].type="count";}
 
@@ -602,7 +604,7 @@ function openItem(id){
   <div class="act"><button class="btn b-in" id="recv">＋ Receive</button><button class="btn b-out" id="use">− Use (FIFO)</button></div>
   <button class="btn b-sec" id="count">Set exact count to this number</button>
   <div class="panel" style="padding:6px 16px"><div class="sect" style="margin:8px 0 2px"><h2>Lots</h2><small>oldest expiry used first</small></div>
-    ${lots.length?lots.map((l,k)=>`<div class="lot"><b>${esc(l.lot)}${k===0?' <span class="pill p-info" style="margin-left:6px">Next out</span>':""}</b><span>${l.expiry?"Expires "+new Date(l.expiry+"T00:00").toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}):"No expiry"} · received ${new Date(l.at).toLocaleDateString(undefined,{month:"short",day:"numeric"})}</span><span class="r"><b class="mono" style="font-size:16px">${fmt(num(l.qty))}</b><br>${expPill(l.expiry)}</span></div>`).join(""):'<p style="color:var(--mute);margin:8px 0 12px">No stock on hand.</p>'}</div>
+    ${lots.length?lots.map((l,k)=>`<div class="lot"><b>${esc(l.lot)}${k===0?' <span class="pill p-info" style="margin-left:6px">Next out</span>':""}</b><span>${l.expiry?"Expires "+new Date(l.expiry+"T00:00").toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}):"No expiry"} · received ${new Date(l.at).toLocaleDateString(undefined,{month:"short",day:"numeric"})}</span><span class="r"><b class="mono" style="font-size:16px">${fmt(num(l.qty))}</b>${l.pcs?`<br><span style="font-size:11px;color:var(--mute)">${l.pcs} case${l.pcs===1?"":"s"}</span>`:""}<br>${expPill(l.expiry)}</span></div>`).join(""):'<p style="color:var(--mute);margin:8px 0 12px">No stock on hand.</p>'}</div>
   ${hist.length?`<div class="panel" style="padding:6px 16px">${hist.map(m=>`<div class="mv"><span class="ic" style="background:${m.delta>=0?"#dcf5ea":"#ffe1e7"};color:${m.delta>=0?"var(--ok)":"var(--out)"}">${m.delta>=0?"↓":"↑"}</span><span class="t">${m.type==="receive"?"Received":m.type==="count"?"Count adjust":"Used"}${m.lot?" · "+esc(m.lot):""}</span><span class="d ${m.delta>=0?"in":"out"}">${m.delta>=0?"+":"−"}${fmt(Math.abs(m.delta))}</span><span class="s">${m.note?esc(m.note)+" · ":""}${new Date(m.at).toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}</span></div>`).join("")}</div>`:""}
   <div class="act"><button class="btn b-sec" id="edit">Edit details</button><button class="btn b-dan" id="del">Delete</button></div><div id="cf"></div>`);
   hydrate($("sheetRoot"));const q=$("qty");$("mn").onclick=()=>q.value=Math.max(0,num(q.value)-1);$("pl").onclick=()=>q.value=num(q.value)+1;
@@ -628,8 +630,8 @@ function openProduct(id){
       if(navigator.share){if(files.length&&navigator.canShare&&navigator.canShare({files}))await navigator.share({title:i.name,text:txt,files});else await navigator.share({title:i.name,text:txt});return;}}catch(e){if(e&&e.name==="AbortError")return;}
     try{await navigator.clipboard.writeText(txt);toast("Product details copied");}catch(e){toast("Sharing isn't available here");}};
 }
-function itemForm(ex,code,asProduct){
-  const i=ex||{code:code||"",unit:"units"};const cats=[...new Set(items().map(x=>x.category).filter(Boolean))].sort();
+function itemForm(ex,code,asProduct,pre){pre=pre||{};
+  const i=ex||{code:code||"",unit:pre.unit||"units"};const cats=[...new Set(items().map(x=>x.category).filter(Boolean))].sort();
   sheet(`<h3 class="st">${ex?"Edit item":"New item"}</h3>${!ex&&code?`<p style="margin:-6px 0 0;color:var(--mute)">Code <span class="mono">${esc(code)}</span> isn't in your stock yet.</p>`:""}
   <form id="f" style="display:flex;flex-direction:column;gap:12px">
   <div class="photoRow"><div class="pv" id="fPv" ${i.photo&&ex?`data-ph="${esc(ex.id)}"`:""}>${i.photo&&ex?"":"No photo"}</div><div class="photoBtns"><label class="btn sm b-sec" for="fPhoto">${i.photo?"Change photo":"Add photo"}</label><input id="fPhoto" type="file" accept="image/*" hidden>${i.photo?'<button type="button" class="btn sm b-dan" id="fPhDel">Remove</button>':""}</div></div>
@@ -637,13 +639,15 @@ function itemForm(ex,code,asProduct){
   <div class="g2"><label class="field">Selling price ($)<input id="fPrice" type="number" inputmode="decimal" step="any" min="0" value="${esc(i.price||"")}" placeholder="optional"></label><label class="field">Cost per unit ($)<input id="fCost" type="number" inputmode="decimal" step="any" min="0" value="${esc(i.cost||"")}" placeholder="optional"></label></div>
   <label class="field">Description<textarea id="fDesc" placeholder="Size, brand, features, notes for customers">${esc(i.description||"")}</textarea></label>
   <label class="field">Barcode / code<input id="fCode" class="mono" value="${esc(i.code||"")}" placeholder="Scan or type"></label>
-  ${ex?"":`<div class="g2"><label class="field">Starting qty<input id="fQty" type="number" inputmode="decimal" step="any" min="0" value="${asProduct?0:1}"></label><label class="field">Lot no.<input id="fLot" class="mono" placeholder="auto"></label></div><label class="field">Expiry date (this lot)<input id="fExp" type="date"></label>`}
+  ${ex?"":`<div class="g2"><label class="field">Starting qty<input id="fQty" type="number" inputmode="decimal" step="any" min="0" value="${pre.qty!=null?pre.qty:asProduct?0:1}"></label><label class="field">Lot no.<input id="fLot" class="mono" placeholder="auto" value="${esc(pre.lot||"")}"></label></div><label class="field">Expiry date (this lot)<input id="fExp" type="date" value="${esc(pre.exp||"")}"></label>`}
   <div class="g2"><label class="field">Unit<input id="fUnit" value="${esc(i.unit||"units")}" placeholder="units, kg, boxes"></label>
   <label class="field">Category<input id="fCat" list="catlist" value="${esc(i.category||"")}" placeholder="e.g. Pantry"><datalist id="catlist">${cats.map(c=>`<option value="${esc(c)}">`).join("")}</datalist></label>
   <label class="field">Reorder at<input id="fRe" type="number" inputmode="decimal" step="any" min="0" value="${esc(i.reorder||"")}" placeholder="0 = off"></label>
   <label class="field">Order up to<input id="fPar" type="number" inputmode="decimal" step="any" min="0" value="${esc(i.par||"")}" placeholder="par level"></label>
   <label class="field">Location<input id="fLoc" value="${esc(i.location||"")}" placeholder="Shelf B2"></label></div>
   <label class="field">Supplier<select id="fSup">${supOptions(i.supplierId)}</select></label>
+  ${/^2\d{6}$/.test(String(i.code||""))?`<label class="field">In-store barcode value<select id="fVm"><option value="weight" ${i.vmType!=="price"?"selected":""}>Weight (kg) is inside the barcode</option><option value="price" ${i.vmType==="price"?"selected":""}>Price is inside the barcode</option></select></label>`:""}
+  <p style="color:var(--mute);font-size:12px;margin:-4px 2px 0">Sold by weight? Set the unit to kg or lb. GS1 labels with a net weight then add the exact weight on each scan.</p>
   <button class="btn b-pri" type="submit">${ex?"Save changes":"Add to stock"}</button><button class="btn b-sec" type="button" id="cancel">Cancel</button></form>`);
   $("cancel").onclick=closeSheet;hydrate($("sheetRoot"));
   let newPhoto=null,dropPhoto=false;
@@ -651,9 +655,9 @@ function itemForm(ex,code,asProduct){
   if($("fPhDel"))$("fPhDel").onclick=()=>{dropPhoto=true;newPhoto=null;$("fPv").innerHTML="No photo";};
   $("f").onsubmit=async e=>{e.preventDefault();const name=$("fName").value.trim();if(!name)return;const c=$("fCode").value.trim();
     const dup=c&&Object.values(D.items).find(x=>String(x.code||"").toLowerCase()===c.toLowerCase());if(dup&&(!ex||dup.id!==ex.id)){toast("That code belongs to "+dup.name);return;}
-    const d={name,code:c,unit:$("fUnit").value.trim()||"units",category:$("fCat").value.trim(),reorder:num($("fRe").value),par:num($("fPar").value),cost:num($("fCost").value),price:num($("fPrice").value),description:$("fDesc").value.trim(),location:$("fLoc").value.trim(),supplierId:$("fSup").value,updatedAt:Date.now()};
+    const d={name,code:c,unit:$("fUnit").value.trim()||"units",category:$("fCat").value.trim(),reorder:num($("fRe").value),par:num($("fPar").value),cost:num($("fCost").value),price:num($("fPrice").value),description:$("fDesc").value.trim(),...($("fVm")?{vmType:$("fVm").value}:{}),location:$("fLoc").value.trim(),supplierId:$("fSup").value,updatedAt:Date.now()};
     let id;if(ex){id=ex.id;Object.assign(D.items[id],d);if(ex.example)D.items[id].example=false;toast("Saved");}
-    else{id=uid("i");D.items[id]={...d,id,lots:[]};const q=num($("fQty").value);if(q>0)receive(D.items[id],q,$("fLot").value,$("fExp").value,"Starting stock");toast("Added "+name);}
+    else{id=uid("i");D.items[id]={...d,id,lots:[]};const q=num($("fQty").value);if(q>0)receive(D.items[id],q,$("fLot").value,$("fExp").value,"Starting stock",null,0,pre.pcs||0);toast("Added "+name);}
     try{if(newPhoto){await PH.put(id,newPhoto);D.items[id].photo=true;}else if(dropPhoto){await PH.del(id);D.items[id].photo=false;}}catch(err){toast("Saved, but the photo couldn't be stored");}
     save();render();closeSheet();if(mode==="cat"||asProduct)openProduct(id);};
 }
@@ -713,13 +717,70 @@ function receivePO(id){
   $("rDo").onclick=()=>{let n=0;p.lines.forEach((l,k)=>{const i=D.items[l.itemId];if(!i)return;const q=num(document.querySelector(`[data-rq="${k}"]`).value);if(q>0){receive(i,q,document.querySelector(`[data-rl="${k}"]`).value,document.querySelector(`[data-re="${k}"]`).value,p.number,p.id,num(l.cost));l.received=q;n++;}});
     p.status="received";p.receivedAt=Date.now();save();render();closeSheet();toast("Received "+n+" line"+(n===1?"":"s")+" into stock");};
 }
-function byCode(c){c=String(c).trim().toLowerCase();return Object.values(D.items).find(i=>String(i.code||"").toLowerCase()===c);}
-function handleCode(code){code=String(code||"").trim();if(!code)return;scanMsg("");const hit=byCode(code);if(hit)openItem(hit.id);else itemForm(null,code);}
+const normCode=c=>{c=String(c||"").trim().toLowerCase();return /^\d+$/.test(c)?c.replace(/^0+/,""):c;};
+function byCode(c){const n=normCode(c);if(!n)return null;return Object.values(D.items).find(i=>normCode(i.code)===n);}
+
+/* ---- GS1 (GS1-128, GS1 DataMatrix, GS1 QR) ---- */
+function gtinOK(g){if(!/^\d{14}$/.test(g))return false;let s=0;for(let k=0;k<13;k++)s+=(+g[k])*(k%2?1:3);return (10-s%10)%10===+g[13];}
+function gsDate(v){if(!/^\d{6}$/.test(v))return"";let y=+v.slice(0,2),m=+v.slice(2,4),d=+v.slice(4,6);y+=y>50?1900:2000;if(m<1||m>12)return"";if(d===0)d=new Date(y,m,0).getDate();return y+"-"+String(m).padStart(2,"0")+"-"+String(d).padStart(2,"0");}
+function parseGS1(raw){
+  let t=String(raw).replace(/^\](C1|d2|Q3|e0|J1)/,"");const GS="\u001d",ai={};
+  if(/^\(\d{2,4}\)/.test(t)){const re=/\((\d{2,4})\)([^(]*)/g;let m;while((m=re.exec(t)))ai[m[1]]=m[2].replace(/\u001d/g,"").trim();}
+  else{if(t[0]===GS)t=t.slice(1);let i=0,guard=0;
+    while(i<t.length&&guard++<25){const two=t.substr(i,2),three=t.substr(i,3),four=t.substr(i,4);let id;
+      if(/^3[1-6]\d\d$/.test(four)||/^39[0-4]\d$/.test(four)||/^7\d{3}$/.test(four)&&/^70(0[1-9]|3\d)$/.test(four))id=four;
+      else if(/^(24[0-3]|25[0-5]|40[0-3]|41[0-7]|42[0-7])$/.test(three))id=three;else id=two;
+      if(!/^\d+$/.test(id))return null;i+=id.length;
+      let len=null;if(/^(01|02|03)$/.test(id))len=14;else if(id==="00")len=18;else if(id==="20")len=2;else if(/^1[1-7]$/.test(id))len=6;else if(/^3[1-6]\d\d$/.test(id))len=6;else if(/^41[0-7]$/.test(id))len=13;
+      let v;if(len){v=t.substr(i,len);i+=len;if(t[i]===GS)i++;}else{const e=t.indexOf(GS,i);v=e<0?t.slice(i):t.slice(i,e);i=e<0?t.length:e+1;}
+      ai[id]=v;}}
+  const g=ai["01"]||ai["02"];if(!g||!/^\d{14}$/.test(g))return null;
+  const r={kind:"gs1",gtin:g,ai,lot:ai["10"]||"",serial:ai["21"]||"",expiry:gsDate(ai["17"]||ai["15"]||ai["16"]||""),expLabel:ai["17"]?"Expiry":ai["15"]?"Best before":ai["16"]?"Sell by":"",prod:gsDate(ai["11"]||ai["13"]||""),count:null,netKg:null,netLb:null,price:null,container:!!ai["02"],checkOK:gtinOK(g)};
+  for(const k in ai){if(/^310\d$/.test(k))r.netKg=+ai[k]/Math.pow(10,+k[3]);if(/^320\d$/.test(k))r.netLb=+ai[k]/Math.pow(10,+k[3]);if(/^392\d$/.test(k))r.price=+ai[k]/Math.pow(10,+k[3]);}
+  if(ai["37"])r.count=+ai["37"];else if(ai["30"])r.count=+ai["30"];return r;}
+/* ---- in-store variable-measure EAN-13 (prefix 20–29: weight or price inside the code) ---- */
+function parseVM(raw){const t=String(raw).trim();if(!/^2\d{12}$/.test(t))return null;return {kind:"vm",code:t.slice(0,7),value:+t.slice(7,12),raw:t};}
+const isW=u=>/^(kg|kgs|kilo|kilos|kilogram|kilograms)$/i.test(String(u||"").trim())?"kg":/^(lb|lbs|pound|pounds)$/i.test(String(u||"").trim())?"lb":/^(g|gram|grams)$/i.test(String(u||"").trim())?"g":"";
+function qtyFor(r,i){const u=isW(i?i.unit:"");
+  if(r.netKg!=null||r.netLb!=null){const kg=r.netKg!=null?r.netKg:r.netLb*0.45359237;
+    if(u==="lb")return {q:Math.round((r.netLb!=null?r.netLb:kg/0.45359237)*1000)/1000,w:true};if(u==="g")return {q:Math.round(kg*1000),w:true};return {q:Math.round(kg*1000)/1000,w:true};}
+  if(r.count!=null)return {q:r.count,w:false};return {q:1,w:false};}
+function scanResult(r,i){
+  let q,w=false,vmPrice=null;const newUnit=r.netLb!=null&&r.netKg==null?"lb":(r.netKg!=null?"kg":"units");const ref=i||{unit:newUnit};
+  if(r.kind==="vm"){if(i&&i.vmType==="price"){vmPrice=r.value/100;q=num(i.price)?Math.round(vmPrice/num(i.price)*1000)/1000:1;w=true;}else{r.netKg=r.value/1000;const x=qtyFor(r,ref);q=x.q;w=x.w;}}
+  else{const x=qtyFor(r,ref);q=x.q;w=x.w;}
+  const unit=i?(i.unit||"units"):newUnit;
+  const rows=[];if(r.kind==="gs1"){rows.push(["GTIN",r.gtin]);if(r.netKg!=null)rows.push(["Net weight",(+r.netKg.toFixed(3))+" kg"]);if(r.netLb!=null)rows.push(["Net weight",(+r.netLb.toFixed(3))+" lb"]);if(r.count!=null)rows.push(["Count",fmt(r.count)]);
+    if(r.lot)rows.push(["Lot / batch",r.lot]);if(r.expiry)rows.push([r.expLabel,new Date(r.expiry+"T00:00").toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"})]);if(r.prod)rows.push(["Produced / packed",new Date(r.prod+"T00:00").toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"})]);if(r.serial)rows.push(["Serial",r.serial]);if(r.price!=null)rows.push(["Price on label","$"+r.price.toFixed(2)]);}
+  else{rows.push(["Item code",r.code]);rows.push([i&&i.vmType==="price"?"Price on label":"Weight in code",i&&i.vmType==="price"?"$"+vmPrice.toFixed(2):fmt(r.value/1000)+" kg"]);}
+  sheet(`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span class="pill p-info">${esc(r.label||(r.kind==="gs1"?"GS1 barcode":"Weighed-item barcode"))}</span>${r.kind==="gs1"&&!r.checkOK?'<span class="pill p-low">Check digit mismatch</span>':""}${w?'<span class="pill p-a">Weight read from label</span>':r.count!=null?'<span class="pill p-a">Count read from label</span>':""}</div>
+  ${i?`<div class="shh">${badge(i)}<div><h3>${esc(i.name)}</h3><p>${fmt(qty(i))} ${esc(i.unit||"units")} on hand</p></div></div>`:`<div><h3 class="st">New product</h3><p style="margin:4px 0 0;color:var(--mute)">This product isn't in your stock yet.</p></div>`}
+  <div class="panel"><div class="kv">${rows.map(x=>`<span>${esc(x[0])}</span><b class="mono">${esc(x[1])}</b>`).join("")}</div></div>
+  <div class="recvbox"><span class="lbl">Quantity${w?" (from label weight)":""}</span><div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center"><input class="inp mono" id="sQty" type="number" inputmode="decimal" step="any" min="0" value="${q}" style="font-size:20px;height:54px"><b>${esc(unit)}</b></div>
+    <div class="g2"><input class="inp mono" id="sLot" placeholder="Lot no." value="${esc(r.lot||"")}"><input class="inp" id="sExp" type="date" value="${esc(r.expiry||"")}" aria-label="Expiry"></div></div>
+  ${i?`<div class="act"><button class="btn b-in" id="sRecv">＋ Receive</button><button class="btn b-out" id="sUse">− Use</button></div><button class="btn b-pri" id="sNext">Receive & scan next</button><button class="btn b-sec" id="sOpen">Open item</button>`
+     :`<button class="btn b-pri" id="sNew">Create product with these details</button>`}`);
+  if(!i){$("sNew").onclick=()=>itemForm(null,r.kind==="gs1"?r.gtin:r.code,false,{qty:num($("sQty").value),lot:$("sLot").value,exp:$("sExp").value,unit:unit,pcs:w?1:0});return;}
+  const doRecv=()=>{const n=num($("sQty").value);if(n<=0){$("sQty").focus();return false;}receive(i,n,$("sLot").value,$("sExp").value,r.serial?"Serial "+r.serial:"",null,0,w?1:0);save();render();toast("Received "+fmt(n)+" "+(i.unit||"")+" · now "+fmt(qty(i)));return true;};
+  $("sRecv").onclick=()=>{if(doRecv())closeSheet();};
+  $("sNext").onclick=()=>{if(doRecv()){closeSheet();setTimeout(()=>$("liveBtn").click(),350);}};
+  $("sUse").onclick=()=>{const n=num($("sQty").value);if(n<=0)return;if(n>qty(i)+1e-9){toast("Only "+fmt(qty(i))+" on hand");return;}const tk=consume(i,n,"",$("sLot").value,w?1:0);save();render();closeSheet();toast("Used "+fmt(n)+" from "+tk.join(", "));};
+  $("sOpen").onclick=()=>openItem(i.id);}
+const FMT={EAN_13:"EAN-13",EAN_8:"EAN-8",UPC_A:"UPC-A",UPC_E:"UPC-E",CODE_128:"Code 128",CODE_39:"Code 39",CODE_93:"Code 93",ITF:"ITF (Interleaved 2 of 5)",CODABAR:"Codabar",QR_CODE:"QR code",DATA_MATRIX:"DataMatrix",PDF_417:"PDF417",AZTEC:"Aztec",RSS_14:"GS1 DataBar",RSS_EXPANDED:"GS1 DataBar Expanded"};
+function guessFmt(code){if(/^\d{13}$/.test(code))return"EAN_13";if(/^\d{12}$/.test(code))return"UPC_A";if(/^\d{8}$/.test(code))return"EAN_8";return"";}
+function detectLabel(code,fmt,g,vm){const f=fmt||guessFmt(code),base=FMT[f]||(fmt?fmt:"Typed code");
+  if(g)return f==="CODE_128"?"GS1-128":f==="DATA_MATRIX"?"GS1 DataMatrix":f==="QR_CODE"?"GS1 QR code":/^RSS/.test(f)?base:"GS1 barcode";
+  if(vm)return base+" · in-store weighed item";if(/^\d{14}$/.test(code)&&(f==="ITF"||!fmt))return"ITF-14 / GTIN-14 (case)";return base;}
+function handleCode(code,fmt){code=String(code||"").trim();if(!code)return;scanMsg("");
+  const g=parseGS1(code);if(g){g.label=detectLabel(code,fmt,g,null);scanResult(g,byCode(g.gtin));return;}
+  const vm=parseVM(code);const vmIt=vm&&byCode(vm.code);if(vmIt){vm.label=detectLabel(code,fmt,null,vm);scanResult(vm,vmIt);return;}
+  const label=detectLabel(code,fmt,null,null);const hit=byCode(code);if(hit){openItem(hit.id);toast(label+" · "+hit.name);}else{itemForm(null,code);toast("Detected "+label);}}
+window.__scan=handleCode;
 function scanMsg(t){$("scanMsg").textContent=t||"";$("scanMsg").hidden=!t;if(t&&tab!=="stock")setTab("stock");}
 
 /* ===================== SCANNER ===================== */
 function reader(){const Z=window.ZXing,h=new Map(),F=Z.BarcodeFormat;h.set(Z.DecodeHintType.TRY_HARDER,true);
-  h.set(Z.DecodeHintType.POSSIBLE_FORMATS,[F.EAN_13,F.EAN_8,F.UPC_A,F.UPC_E,F.CODE_128,F.CODE_39,F.CODE_93,F.ITF,F.CODABAR,F.QR_CODE,F.DATA_MATRIX,F.PDF_417,F.AZTEC]);
+  h.set(Z.DecodeHintType.POSSIBLE_FORMATS,[F.EAN_13,F.EAN_8,F.UPC_A,F.UPC_E,F.CODE_128,F.CODE_39,F.CODE_93,F.ITF,F.CODABAR,F.QR_CODE,F.DATA_MATRIX,F.PDF_417,F.AZTEC,F.RSS_14,F.RSS_EXPANDED].filter(x=>x!==undefined));
   const r=new Z.MultiFormatReader();r.setHints(h);return r;}
 function tryDecode(r,cv){const Z=window.ZXing,src=new Z.HTMLCanvasElementLuminanceSource(cv);
   for(const mk of [()=>new Z.HybridBinarizer(src),()=>new Z.GlobalHistogramBinarizer(src),()=>new Z.HybridBinarizer(src.rotateCounterClockwise())]){
@@ -728,7 +789,7 @@ $("cam").addEventListener("change",async e=>{const f=e.target.files&&e.target.fi
   if(!window.ZXing){scanMsg("The barcode reader didn't load. Connect to the internet once, then try again.");return;}toast("Reading barcode…");
   try{const url=URL.createObjectURL(f),img=new Image();img.src=url;await img.decode();const cv=$("cv"),ctx=cv.getContext("2d",{willReadFrequently:true}),r=reader();let res=null;
     for(const max of [1400,900,2200]){const s=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));cv.width=Math.round(img.naturalWidth*s);cv.height=Math.round(img.naturalHeight*s);ctx.drawImage(img,0,0,cv.width,cv.height);res=tryDecode(r,cv);if(res)break;}
-    URL.revokeObjectURL(url);if(res)handleCode(res.getText());else scanMsg("Couldn't find a barcode in that photo. Fill the frame with the code in good light, or type it in.");
+    URL.revokeObjectURL(url);if(res)handleCode(res.getText(),window.ZXing.BarcodeFormat[res.getBarcodeFormat()]);else scanMsg("Couldn't find a barcode in that photo. Fill the frame with the code in good light, or type it in.");
   }catch(err){scanMsg("Couldn't open that photo. Try again or type the code.");}});
 let stream=null,scanning=false,timer=null,misses=0;
 function stopLive(){scanning=false;clearTimeout(timer);try{stream&&stream.getTracks().forEach(t=>t.stop());}catch(e){}stream=null;$("vid").srcObject=null;$("live").hidden=true;$("torch").hidden=true;}
@@ -748,7 +809,7 @@ $("liveBtn").onclick=async()=>{scanMsg("");
   const loop=()=>{if(!scanning)return;const w=v.videoWidth,h=v.videoHeight;
     if(w&&h){const full=misses%4===3;const sx=full?0:Math.round(w*.05),sw=full?w:Math.round(w*.9),sy=full?0:Math.round(h*.2),sh=full?h:Math.round(h*.6);
       const k=Math.min(1,1280/sw);cv.width=Math.round(sw*k);cv.height=Math.round(sh*k);ctx.drawImage(v,sx,sy,sw,sh,0,0,cv.width,cv.height);
-      const res=tryDecode(r,cv);if(res){const code=res.getText();if(navigator.vibrate)try{navigator.vibrate(40)}catch(_){}stopLive();handleCode(code);return;}
+      const res=tryDecode(r,cv);if(res){const code=res.getText(),fm=window.ZXing.BarcodeFormat[res.getBarcodeFormat()];if(navigator.vibrate)try{navigator.vibrate(40)}catch(_){}stopLive();handleCode(code,fm);return;}
       misses++;if(misses===40)$("liveTip").textContent="Still looking… add light, or move a little closer or further";}
     timer=setTimeout(loop,110);};
   loop();};
@@ -770,6 +831,8 @@ $("restoreIn").addEventListener("change",async e=>{const f=e.target.files&&e.tar
     $("moreCf").innerHTML=`<div class="confirm" style="margin-top:12px"><span style="flex:1">Replace everything on this phone with the backup from ${new Date(j.savedAt||Date.now()).toLocaleDateString()} (${Object.keys(d.items).length} items)?</span><button class="btn sm b-out" id="yes">Replace</button><button class="btn sm b-sec" id="no">Cancel</button></div>`;
     $("no").onclick=()=>$("moreCf").innerHTML="";$("yes").onclick=async()=>{D={items:{},suppliers:{},pos:{},moves:[],...d};for(const [id,du] of Object.entries(j.photos||{})){try{await PH.put(id,await (await fetch(du)).blob());}catch(e){}}save();$("moreCf").innerHTML="";render();toast("Backup restored");};
   }catch(err){toast("That file isn't a Stockroom backup");}});
+$("typeCode").onclick=()=>{sheet(`<h3 class="st">Enter a barcode</h3><input class="inp mono" id="tcIn" placeholder="e.g. (01)00012345678905(3102)012345(10)ABC" autocomplete="off"><button class="btn b-pri" id="tcGo">Look up</button>`);
+  $("tcIn").focus();$("tcGo").onclick=()=>{const v=$("tcIn").value;closeSheet();handleCode(v,"");};};
 $("clearEx").onclick=()=>{$("moreCf").innerHTML=`<div class="confirm" style="margin-top:12px"><span style="flex:1">Delete all example items, suppliers, orders and their history?</span><button class="btn sm b-out" id="yes">Delete</button><button class="btn sm b-sec" id="no">Keep</button></div>`;
   $("no").onclick=()=>$("moreCf").innerHTML="";$("yes").onclick=()=>{const ids=new Set(Object.values(D.items).filter(i=>i.example).map(i=>i.id));for(const id of ids)delete D.items[id];
     for(const s of Object.values(D.suppliers))if(s.example)delete D.suppliers[s.id];for(const p of Object.values(D.pos))if(p.example)delete D.pos[p.id];D.moves=D.moves.filter(m=>!ids.has(m.itemId));save();$("moreCf").innerHTML="";render();toast("Example data removed");};};
