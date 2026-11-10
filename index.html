@@ -764,30 +764,39 @@ function newReceiptManual(){sheet(`<h3 class="st">New delivery</h3>
   $("pCancel").onclick=closeSheet;
   $("pGo").onclick=()=>{const d=parseInvoiceText($("pTxt").value);const id=newReceipt(d,"text");ordSeg="rc";render();openReceipt(id);if($("pTxt")&&!d.lines.length&&d.raw)toast("No item lines recognised — add them below");};}
 function fixDec(tok,dec){let t=String(tok).replace(/[^\d.,]/g,"");if(!t)return NaN;if(/[.,]\d{1,3}$/.test(t))return numIn(t);if(t.length>dec)return +(t.slice(0,-dec)+"."+t.slice(-dec));return +t;}
-function reconcile(L){const q=L.qty,p=L.price,a=L.amount,ok=(x,y,z)=>x>0&&y>0&&z>0&&Math.abs(x*y-z)<=Math.max(0.02,z*0.002);
-  if(ok(q,p,a)){L.check=false;return L;}
-  if(a>0&&p>0){const q2=Math.round(a/p*1000)/1000;if(q2>0){L.qty=q2;L.check=!(q>0)||Math.abs(q2-q)>0.01;return L;}}
-  if(a>0&&q>0){L.price=Math.round(a/q*100)/100;L.check=true;return L;}
-  if(q>0&&p>0){L.amount=Math.round(q*p*100)/100;L.check=true;return L;}
-  L.check=true;return L;}
+/* choose the reading that best agrees with the digits actually printed: keep qty×price, or derive price, or derive qty */
+function digSim(v,raw,dec){const A=Number(v).toFixed(dec).replace(/\D/g,"").replace(/^0+(?=\d)/,""),B=String(raw||"").replace(/\D/g,"").replace(/^0+(?=\d)/,"");if(!B)return 0;let m=0;for(let k=1;k<=Math.min(A.length,B.length);k++)if(A[A.length-k]===B[B.length-k])m++;return m/Math.max(A.length,B.length);}
+function reconcile(L){const cnt=!isW(L.unit),q=L.qty,p=L.price,a=L.amount,R=L._raw||{};delete L._raw;
+  const close=(x,y)=>Math.abs(x-y)<=Math.max(0.011,y*0.0005);
+  if(q>0&&p>0&&a>0&&close(Math.round(q*p*100)/100,a)){L.check=false;return L;}
+  const C=[];
+  if(q>0&&p>0)C.push({s:a>0?digSim(Math.round(q*p*100)/100,R.a,2):0.5,set:()=>{L.amount=Math.round(q*p*100)/100;}});
+  if(a>0&&q>0){const p2=Math.round(a/q*100)/100;if(close(Math.round(p2*q*100)/100,a))C.push({s:digSim(p2,R.p,2),set:()=>{L.price=p2;}});}
+  if(a>0&&p>0){const q2=cnt?Math.round(a/p):Math.round(a/p*1000)/1000;if(q2>0&&close(Math.round(q2*p*100)/100,a))C.push({s:digSim(q2,R.q,cnt?0:3)+0.01,set:()=>{L.qty=q2;}});}
+  C.sort((x,y)=>y.s-x.s);if(C.length&&C[0].s>=0.5)C[0].set();L.check=true;return L;}
 function parseInvoiceText(txt){const out={lines:[],raw:!!String(txt||"").trim()};const T=String(txt||"");
   const inv=T.match(/(?:invoice|facture)[^\n\d]{0,40}?(\d{5,})/i);if(inv)out.invoice=inv[1];
   const tots=[...T.matchAll(/(\d{1,3}(?:[ ,]\d{3})*[.,]\d{2})\b/g)].map(m=>numIn(m[1].replace(/ /g,","))).filter(x=>x>0);
   {const low=T.toLowerCase().replace(/\s+/g," ");const known=Object.values(D.suppliers).filter(x=>!x.example).find(x=>{const n=nkey(x.name);return n.length>3&&(low.includes(n)||low.includes(n.slice(1)));});if(known)out.supplier=known.name;}
-  for(let line of T.split(/\n/)){line=line.replace(/[|\[\]{}“”"'‘’`~®©]/g," ").replace(/\s+/g," ").trim();
-    const m=line.match(/^(?:[^\w\s]{1,3}\s+)?(?:\d{1,3}\s+)?(\d{2,7})\s+((?=[A-Z-]*\d)[A-Z0-9][A-Z0-9-]{3,13})\s+(.+)$/);if(!m)continue;
-    const toks=m[3].split(" ");let last=-1;toks.forEach((t,k)=>{if(/[A-Za-z]{2,}/.test(t)&&!/^(kg|lb|lbs|k9|kq|hg|wg|ma|ea)$/i.test(t.replace(/[^A-Za-z]/g,""))&&!/^\d/.test(t))last=k;});
-    if(last<0)continue;const desc=toks.slice(0,last+1).join(" ");if(!/[A-Za-z]{3,}/.test(desc)||/^(no|product|lot|item|description|qty|quantity|totaux|totals?)\b/i.test(desc))continue;
-    let tail=toks.slice(last+1).join(" ").replace(/(\d)\s+(\d{2})(?!\d)\s*$/,"$1.$2");
-    const parts=(tail.match(/\d[\d.,]*(?:\s*(?:kg|lb|lbs|k9|kq|hg|wg|k|lg)\b)?/gi)||[]).map(t=>({t,w:/[a-z]/i.test(t)}));
-    let cases=0,qty=0,unit="kg",price=0,amount=0;
-    if(parts.length&&/^\d{1,3}$/.test(parts[0].t)&&!parts[0].w&&parts.length>1){cases=+parts[0].t;parts.shift();}
-    const wi=parts.findIndex(x=>x.w);if(wi>=0){unit=/lb/i.test(parts[wi].t)?"lb":"kg";qty=fixDec(parts[wi].t,3);parts.splice(wi,1);}else if(parts.length>=3)qty=fixDec(parts.shift().t,3);
-    if(parts.length>=2){amount=fixDec(parts[parts.length-1].t,2);price=fixDec(parts[parts.length-2].t,2);}else if(parts.length===1)amount=fixDec(parts[0].t,2);
-    const L=reconcile({code:m[1],lot:m[2],desc:desc.replace(/DEL!/g,"DELI").replace(/!/g,"I"),cases,qty:isFinite(qty)?qty:0,unit,price:isFinite(price)?price:0,amount:isFinite(amount)?amount:0});
+  const UNIT=/^(kg|kgs|k9|kq|lb|lbs|pc|pcs|pce|po|pe|pk|un|unit|units|ea)$/i,unitOf=u=>/^(lb|lbs)$/i.test(u)?"lb":/^(k|kg|kgs|k9|kq)$/i.test(u)?"kg":"packs";
+  for(let line of T.split(/\n/)){line=line.replace(/[|\[\]{}“”"‘’`~®©]/g," ").replace(/(\d)\s*(kg|kgs|lbs?|pcs?|pce|po|pe)\b/gi,"$1 $2").replace(/\s+/g," ").trim();
+    const m=line.match(/^(?:[^\w\s]{1,3}\s+)?(?:\d{1,3}\s+)?(\d{2,7})\s+(.+)$/);if(!m)continue;
+    let toks=m[2].split(" ");const lots=[];while(lots.length<2&&toks.length&&/^\d{4,8}$/.test(toks[0])){lots.push(toks.shift());}
+    let last=-1;toks.forEach((t,k)=>{if(/[A-Za-z]{2,}/.test(t)&&!UNIT.test(t.replace(/[^A-Za-z]/g,"")))last=k;});
+    if(last<0)continue;const desc=toks.slice(0,last+1).join(" ").replace(/[,;]$/,"");if(!/[A-Za-z]{3,}/.test(desc)||/^(no|product|lot|item|description|qty|quantity|totaux|totals?|order|client|montant)\b/i.test(desc))continue;
+    let rest=toks.slice(last+1);rest=rest.filter(t=>t!=="-"&&t!=="*"&&t!=="**");
+    let ui=rest.findIndex(t=>UNIT.test(t));let unit="kg",qty=0,cases=0,price=0,amount=0,nums=[],qRaw="",pRaw="",aRaw="";
+    if(ui>0){unit=unitOf(rest[ui]);const qt=rest[ui-1];qRaw=qt;qty=unit==="packs"?numIn(qt.replace(/[^\d]/g,"")):fixDec(qt,3);
+      const before=rest.slice(0,ui-1).filter(t=>/^\d{1,3}$/.test(t));if(before.length)cases=+before[before.length-1];nums=rest.slice(ui+1).filter(t=>/^\d[\d.,]*$/.test(t));}
+    else{nums=rest.filter(t=>/^\d[\d.,]*$/.test(t));if(nums.length>=4){cases=+nums.shift();}if(nums.length>=3){qRaw=nums[0];qty=fixDec(nums.shift(),3);}}
+    if(nums.length>=2){aRaw=nums[nums.length-1];pRaw=nums[nums.length-2];amount=fixDec(aRaw,2);price=fixDec(pRaw,2);}else if(nums.length===1){aRaw=nums[0];amount=fixDec(aRaw,2);}
+    if(!(qty>0)&&!(amount>0))continue;
+    const L=reconcile({_raw:{q:qRaw,p:pRaw,a:aRaw},code:m[1],lot:lots.join(" "),desc:desc.replace(/DEL!/g,"DELI").replace(/!/g,"I"),cases,qty:isFinite(qty)?qty:0,unit,price:isFinite(price)?price:0,amount:isFinite(amount)?amount:0});
     for(const k of ["qty","price","amount"])if(!isFinite(L[k]))L[k]=0;out.lines.push(L);}
+  {const MO={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};const dm=T.match(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+(\d{1,2}),?\s*(20\d\d)\b/i);
+    if(dm)out.date=dm[3]+"-"+String(MO[dm[1].toLowerCase()]).padStart(2,"0")+"-"+String(+dm[2]).padStart(2,"0");else{const d2=T.match(/\b(20\d\d)[\/-](\d{2})[\/-](\d{2})\b/);if(d2)out.date=d2[1]+"-"+d2[2]+"-"+d2[3];}}
   const sum=out.lines.reduce((x,l)=>x+num(l.amount),0);const tl=T.match(/total[\s\S]{0,120}?(\d{1,3}(?:[ ,]\d{3})*[.,]\d{2})/i);
-  out.total=tl?numIn(tl[1].replace(/ /g,",")):(tots.length?Math.max(...tots):0);if(out.total&&out.total<sum*0.5)out.total=0;
+  out.total=tl?numIn(tl[1].replace(/ /g,",")):(tots.length?Math.max(...tots):0);if(out.total&&out.total<sum*0.5)out.total=0;if(out.total&&sum&&Math.abs(out.total-sum)<=out.total*0.01&&!out.lines.some(l=>l.check))out.total=Math.round(sum*100)/100;
   return out;}
 /* free on-device text reader (Tesseract OCR) */
 let OCRW=null;
@@ -843,7 +852,7 @@ function openReceipt(id){const R=D.receipts[id];if(!R)return;const done=R.status
     <div class="rh"><div><b>${esc(l.desc||"New line")}</b>${l.check&&!done?' <span class="pill p-low">Check</span>':""}<br><small>${esc(l.code||"no product no.")}</small></div>${done?"":`<button class="btn sm b-dan" data-del="${k}" aria-label="Remove line">✕</button>`}</div>
     ${done?"":`<label class="mini">Description<input data-f="desc" value="${esc(l.desc)}"></label><label class="mini">Goes into stock as<select data-f="itemId">${opt(l.itemId)}</select></label>${l.itemId?"":`<label class="mini">New item is counted in<select data-f="newUnit">${["kg","lb","packs","units","cases"].map(u=>`<option ${u===(l.newUnit||l.unit)?"selected":""}>${u}</option>`).join("")}</select></label>`}`}
     <div class="g3"><label class="mini">Product no.<input data-f="code" class="mono" value="${esc(l.code)}" ${done?"disabled":""}></label><label class="mini">Lot<input data-f="lot" class="mono" value="${esc(l.lot)}" ${done?"disabled":""}></label><label class="mini">Expiry<input data-f="expiry" type="date" value="${esc(l.expiry||"")}" ${done?"disabled":""}></label></div>
-    <div class="g3"><label class="mini">Quantity<input data-f="qty" type="number" inputmode="decimal" step="any" value="${l.qty}" ${done?"disabled":""}></label><label class="mini">Unit<select data-f="unit" ${done?"disabled":""}>${["kg","lb","units"].map(u=>`<option ${u===l.unit?"selected":""}>${u}</option>`).join("")}</select></label><label class="mini">Cases<input data-f="cases" type="number" inputmode="numeric" value="${l.cases||""}" ${done?"disabled":""}></label></div>
+    <div class="g3"><label class="mini">Quantity<input data-f="qty" type="number" inputmode="decimal" step="any" value="${l.qty}" ${done?"disabled":""}></label><label class="mini">Unit<select data-f="unit" ${done?"disabled":""}>${["kg","lb","packs","units"].map(u=>`<option ${u===l.unit?"selected":""}>${u}</option>`).join("")}</select></label><label class="mini">Cases<input data-f="cases" type="number" inputmode="numeric" value="${l.cases||""}" ${done?"disabled":""}></label></div>
     <div class="g3"><label class="mini">Price / ${esc(l.unit)}<input data-f="price" type="number" inputmode="decimal" step="any" value="${l.price||""}" ${done?"disabled":""}></label><label class="mini" style="grid-column:span 2">Amount<input value="${money(num(l.amount)||num(l.qty)*num(l.price))}" disabled></label></div>
     ${conv?`<div class="recvbox" style="padding:10px"><label class="mini">Into stock (${esc(su)}) — billed by ${esc(l.unit)}, counted in ${esc(su)}<input data-f="stockQty" type="number" inputmode="decimal" step="any" value="${fmt(SQ)}" ${done?"disabled":""}></label><span style="font-size:12px;color:var(--mute)">${cp?`${fmt(num(l.cases))} cases × ${fmt(cp)} ${esc(su)} per case`:`No "${esc(su)} per case" saved yet — type the total, or set it on the product's case barcode.`}${SQ>0&&num(l.amount)?` · cost ${money(num(l.amount)/SQ)} per ${esc(su.replace(/s$/,""))}`:""}</span></div>`:""}
     <div class="dest"><label class="mini">To fridge (${esc(su)})<input data-f="inv" type="number" inputmode="decimal" step="any" value="${fmt(inv)}" ${done?"disabled":""}></label><label class="mini">To shelf (${esc(su)})<input data-f="shelf" type="number" inputmode="decimal" step="any" value="${fmt(num(l.shelf))}" ${done?"disabled":""}></label>
