@@ -927,7 +927,37 @@ async function pdfLines(file){await loadScript("pdf/pdf.min.js");const lib=windo
   return out;}
 const NUMRE=/^-?\$?\d{1,3}(?:[ ,]\d{3})*(?:[.,]\d+)?$|^-?\$?\d+(?:[.,]\d+)?$/;
 function salesNums(tokens){return tokens.map((t,k)=>({t,k})).filter(o=>{const c=o.t.replace(/(kg|lb|lbs|un|ea|x)$/i,"");return NUMRE.test(c)&&!/^\d{1,2}[:/]\d/.test(o.t);}).map(o=>({k:o.k,raw:o.t,v:numIn(o.t.replace(/[$a-z]/gi,""))}));}
-function salesMatch(text){const toks=text.split(" ");const nt=toks.map(normCode);let best=null;
+/* POS "Sales Summary Detail": Description · Code · Brand · Size · Qty (units/weight) · $Sales · Packages */
+function posLine(text){text=text.replace(/\s+[—–-]\s+/g," ").replace(/\$(\d{1,4}) (\d{2})(?=\s|$)/g,"$$$1.$2");const t=text.split(" ").filter(Boolean).map(x=>/^T\d{7,}$/.test(x)?"7"+x.slice(1):x).map(x=>/^[§$S]?[\d§]{5,}[)\]]?$/.test(x)?x.replace(/^\$/,"").replace(/§/g,"5").replace(/^S(?=\d)/,"5").replace(/[)\]]$/,"1"):x),n=t.length;if(n<4)return null;
+  const N=x=>{x=String(x);const dol=/^[S$§]/.test(x);const c=x.replace(/^[S$§]+/,"").replace(/,(?=\d{3})/g,"").replace(/[oO]/g,"0");if(/^\d+[.,]\d{2}$/.test(c))return +c.replace(",",".");if(dol&&/^\d{3,6}$/.test(c))return +c/100;if(dol&&/^\d+\.\d?$/.test(c))return +c;return null;};
+  const pk=N(t[n-1]),am=N(t[n-2]),q=N(t[n-3]);if(pk==null||am==null||q==null)return null;if(/\$/.test(text)&&!/^[S$§]/.test(t[n-2]))return null;
+  if(!/[A-Za-z]{3,}/.test(text)||/\b(total|totals|grand)\b/i.test(text))return null;
+  let ci=-1;for(let k=1;k<n-3;k++){if(/^\d{2,14}$/.test(t[k])&&!/^(grams?|g|gr|oz|0z|lbs?|kg|ml|l)\.?$/i.test(t[k+1]||"")&&t.slice(0,k).some(x=>/[A-Za-z]{2,}/.test(x))){ci=k;break;}}
+  const desc=t.slice(0,ci>0?ci:n-3).filter(x=>!/^\d{3,4}$/.test(x)||ci<0).join(" ");
+  return {code:ci>0?t[ci]:"",desc,qty:q,amount:am,packs:Math.abs(pk-Math.round(pk))<0.01?Math.round(pk):pk,price:q>0?am/q:0};}
+/* rejoin report rows that the photo reader split over two or three lines */
+function posMerge(L){const numOnly=t=>/^[\s\d$S§.,]+$/.test(t)&&/\d/.test(t),out=[],used=new Set();
+  const hdr=t=>/\b(qty|description|packages|brand)\b/i.test(t);
+  L.forEach((t,k)=>{if(used.has(k))return;if(numOnly(t)){return;}if(posLine(t)||hdr(t)||!/[A-Za-z]{3,}/.test(t)){out.push(t);return;}
+    const near=[k-1,k+1,k-2,k+2].filter(j=>j>=0&&j<L.length&&!used.has(j)&&numOnly(L[j]));
+    const ints=near.filter(j=>!/\d[.,]\d{2}/.test(L[j])).sort((a,b)=>a-b),decs=near.filter(j=>/\d[.,]\d{2}/.test(L[j])).sort((a,b)=>a-b);
+    const n1=[k-1,k+1].filter(j=>near.includes(j)).map(j=>[j]);
+    for(const pick of [...n1,[...ints,...decs],[...ints,...decs.slice(0,1)],decs]){if(!pick.length)continue;const m=t+" "+pick.map(j=>L[j]).join(" ");if(posLine(m)){pick.forEach(j=>used.add(j));out.push(m);return;}}
+    out.push(t);});
+  L.forEach((t,k)=>{if(numOnly(t)&&!used.has(k))out.push(t);});return out;}
+const STOPW=new Set("the and pack whole fresh sliced slices sl of grams gr oz kg lb".split(" "));
+const wset=t=>new Set(nkey(t).split(" ").filter(w=>w.length>=3&&!STOPW.has(w)));
+function nameSim(a,b){const A=wset(a),B=wset(b);if(!A.size||!B.size)return 0;let h=0;for(const w of A)if([...B].some(v=>v===w||(w.length>=5&&v.length>=5&&lev1(w,v))))h++;return h/Math.min(A.size,B.size);}
+const itemSim=(i,desc)=>Math.max(nameSim(i.name,desc),...(i.salesNames||[]).map(n=>nameSim(n,desc)),i.invName?nameSim(i.invName,desc):0);
+const lev1=(a,b)=>{if(a===b)return true;if(Math.abs(a.length-b.length)>1)return false;let i=0,j=0,e=0;while(i<a.length&&j<b.length){if(a[i]===b[j]){i++;j++;continue;}if(++e>1)return false;if(a.length>b.length)i++;else if(b.length>a.length)j++;else{i++;j++;}}return e+(a.length-i)+(b.length-j)<=1;};
+const bcCore=c=>{c=String(c||"").replace(/\D/g,"").replace(/^0+/,"");return c;};
+function posCodeHit(i,code){if(!code)return false;const c=bcCore(code);if(c.length<2)return false;
+  const all=[i.code,...(i.alt||[]),...(i.salesCodes||[])].filter(Boolean).map(bcCore);
+  return all.some(b=>b===c||(c.length>=8&&b.length===c.length+1&&b.slice(0,-1)===c));}
+function salesMatch(text){const P=posLine(text);if(P&&P.code){const its=Object.values(D.items);const hit=its.find(i=>posCodeHit(i,P.code));if(hit)return {item:hit,codeTok:-1,how:"code",pos:P};}
+  if(P){const dn=nkey(P.desc).replace(/^[^a-z]+/,"");const hit=dn.length>=6&&Object.values(D.items).find(i=>(i.salesNames||[]).some(n=>nkey(n)===dn));return hit?{item:hit,codeTok:-1,how:"name",pos:P}:null;}
+  const r=salesMatch0(text);if(r&&P)r.pos=P;return r;}
+function salesMatch0(text){const toks=text.split(" ");const nt=toks.map(normCode);let best=null;
   for(const i of Object.values(D.items)){const codes=[i.code,...(i.alt||[]),...Object.values(i.supCodes||{}),...(i.salesCodes||[])].filter(Boolean).map(normCode).filter(c=>c.length>=2);
     const ci=nt.findIndex(t=>codes.includes(t));if(ci>=0)return {item:i,codeTok:ci,how:"code"};
     const T=" "+nkey(text)+" ";for(const n of [i.name,i.invName,...(i.salesNames||[])].filter(Boolean).map(nkey)){if(n.length>=4&&T.includes(" "+n+" ")&&(!best||n.length>best.len))best={item:i,codeTok:-1,how:"name",len:n.length};}}
@@ -936,45 +966,59 @@ function pickQty(nums,tpl){const v=nums.map(n=>n.v);
   for(let a=0;a<v.length;a++)for(let b=0;b<v.length;b++)for(let c=0;c<v.length;c++){if(a===b||b===c||a===c)continue;const q=v[a],p=v[b],t=v[c];if(q>0&&p>0&&t>0&&Math.abs(q*p-t)<=Math.max(0.02,t*0.003)&&t>=q&&c>a&&c>b)return {q,idx:a,sure:true};}
   if(tpl&&tpl.idx!=null&&nums.length>tpl.idx)return {q:v[tpl.idx],idx:tpl.idx,sure:false};
   return nums.length?{q:v[0],idx:0,sure:false}:{q:0,idx:-1,sure:false};}
-async function ocrLines(file,P){await loadScript("ocr/tesseract.min.js");
+/* local-contrast clean-up for faint printed reports: gaussian-ish adaptive threshold (3 box blurs) */
+function binarize(x,W,H,rad,C){const d=x.getImageData(0,0,W,H),A=d.data,g=new Float32Array(W*H);for(let j=0,p=0;p<W*H;p++,j+=4)g[p]=.3*A[j]+.59*A[j+1]+.11*A[j+2];
+  let b=g.slice(),t=new Float32Array(W*H);const box=(src,dst,horiz)=>{const n=horiz?W:H,m=horiz?H:W,st=horiz?1:W,ln=horiz?W:1,w=2*rad+1;
+    for(let r=0;r<m;r++){const o=r*ln;let acc=0;for(let k=-rad;k<=rad;k++)acc+=src[o+Math.min(n-1,Math.max(0,k))*st];
+      for(let k=0;k<n;k++){dst[o+k*st]=acc/w;const a=Math.min(n-1,k+rad+1),z=Math.max(0,k-rad);acc+=src[o+a*st]-src[o+z*st];}}};
+  for(let k=0;k<3;k++){box(b,t,true);box(t,b,false);}
+  for(let j=0,p=0;p<W*H;p++,j+=4){const v=g[p]>b[p]-C?255:0;A[j]=A[j+1]=A[j+2]=v;}x.putImageData(d,0,0);}
+async function ocrLines(file,P,opt){opt=opt||{};await loadScript("ocr/tesseract.min.js");
   if(!OCRW)OCRW=await Tesseract.createWorker("eng",1,{workerPath:"ocr/worker.min.js",corePath:"ocr/",langPath:"ocr/",gzip:true,workerBlobURL:false,
     logger:m=>{if(m.status==="recognizing text")P("Reading text… "+Math.round(m.progress*100)+"%");else if(/load/.test(m.status))P("Loading the reader… "+Math.round((m.progress||0)*100)+"%");}});
-  await OCRW.setParameters({tessedit_pageseg_mode:"6",preserve_interword_spaces:"1"});
-  const url=URL.createObjectURL(file),img=new Image();img.src=url;await img.decode();const k=Math.min(2,3000/Math.max(img.naturalWidth,img.naturalHeight));
+  await OCRW.setParameters({tessedit_pageseg_mode:opt.psm||"6",preserve_interword_spaces:"1"});
+  const url=URL.createObjectURL(file),img=new Image();img.src=url;await img.decode();const k=opt.bin?Math.max(1,Math.min(2.5,2250/Math.min(img.naturalWidth,img.naturalHeight))):Math.min(2,3000/Math.max(img.naturalWidth,img.naturalHeight));
   const c=document.createElement("canvas");c.width=Math.round(img.naturalWidth*k);c.height=Math.round(img.naturalHeight*k);const x=c.getContext("2d",{willReadFrequently:true});x.imageSmoothingQuality="high";x.drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);
-  const d=x.getImageData(0,0,c.width,c.height),A=d.data;for(let j=0;j<A.length;j+=4){const g=.3*A[j]+.59*A[j+1]+.11*A[j+2];A[j]=A[j+1]=A[j+2]=g;}x.putImageData(d,0,0);
+  const d=x.getImageData(0,0,c.width,c.height),A=d.data;for(let j=0;j<A.length;j+=4){const g=.3*A[j]+.59*A[j+1]+.11*A[j+2];A[j]=A[j+1]=A[j+2]=g;}x.putImageData(d,0,0);if(opt.bin){P("Cleaning up the photo…");await new Promise(r=>setTimeout(r,30));binarize(x,c.width,c.height,Math.round(14*c.width/2250),20);}
   const r=await OCRW.recognize(c);return r.data.text.split(/\n/).map(t=>t.replace(/[|\[\]{}“”"'‘’`~]/g," ").replace(/\s+/g," ").trim()).filter(Boolean);}
 async function salesImport(e){const f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;const isImg=/^image\//.test(f.type)||/\.(jpe?g|png|heic|heif)$/i.test(f.name);
   sheet(`<div style="text-align:center;padding:26px 10px"><div class="st" style="font-size:20px">Reading sales report…</div><p style="color:var(--mute)" id="slP">${isImg?"Reading the photo on this phone":"Reading the PDF"}</p>${isImg?'<p style="color:var(--dim);font-size:12px">The first photo needs internet once to download the free reader (about 7 MB).</p>':""}</div>`);
   const P=t=>{const el=$("slP");if(el)el.textContent=t;};
-  let lines;try{lines=isImg?await ocrLines(f,P):await pdfLines(f);}catch(err){closeSheet();scanMsg(isImg?"Couldn't read that photo. Lay the report flat, take it straight from above in good light, and try again.":"Couldn't open that PDF. Make sure it's the report exported from your POS.");return;}
+  let lines;try{lines=isImg?await ocrLines(f,P,{bin:true,psm:"4"}):await pdfLines(f);}catch(err){closeSheet();scanMsg(isImg?"Couldn't read that photo. Lay the report flat, take it straight from above in good light, and try again.":"Couldn't open that PDF. Make sure it's the report exported from your POS.");return;}
   if(!lines.length&&!isImg){try{P("This PDF is an image — reading it as a photo");}catch(_){}}
   if(!lines.length){closeSheet();scanMsg(isImg?"No text found in that photo. Try a straighter, brighter photo.":"This PDF has no readable text. Take a photo of the printed report instead.");return;}
-  if(isImg)S_ocr=true;
+  if(isImg)S_ocr=true;lines=posMerge(lines);
   const hash=f.name+"|"+f.size+"|"+lines.slice(0,8).join("|").slice(0,300);D.salesImports=D.salesImports||{};
   const S={file:isImg?"Photo of report "+new Date().toLocaleDateString():f.name,hash,lines,manual:{},ocr:isImg};salesReview(S);}
 let S_ocr=false;
 function salesReview(S){const tpl=D.salesTpl||null;const rows=[],other=[];
   S.lines.forEach((text,li)=>{const toks=text.split(" ");const m=salesMatch(text);let nums=salesNums(toks);
-    if(m){if(m.codeTok>=0)nums=nums.filter(n=>n.k!==m.codeTok);const pq=pickQty(nums,tpl);const q=S.manual[li]!=null?S.manual[li]:pq.q;rows.push({li,text,item:m.item,nums,q,sure:pq.sure||S.manual[li]!=null,idx:pq.idx});}
+    if(m&&m.pos){const P=m.pos,w=isW(m.item.unit),q0=w?P.qty:P.packs,whole=Math.abs(P.qty-Math.round(P.qty))<0.001;
+      const clash=!w&&whole&&P.qty>=1&&Math.abs(P.qty-P.packs)>0.001;const q=S.manual[li]!=null?S.manual[li]:q0;
+      const odd=P.desc&&itemSim(m.item,P.desc)===0;
+      rows.push({li,text,item:m.item,nums:[],q,sure:S.manual[li]!=null||(!clash&&!odd&&m.how!=="near"&&!(S.ocr&&!P.code)),pos:P,w,clash,odd});}
+    else if(m){if(m.codeTok>=0)nums=nums.filter(n=>n.k!==m.codeTok);const pq=pickQty(nums,tpl);const q=S.manual[li]!=null?S.manual[li]:pq.q;rows.push({li,text,item:m.item,nums,q,sure:pq.sure||S.manual[li]!=null,idx:pq.idx});}
+    else if(posLine(text))other.push({li,text,pos:posLine(text)});
     else if(nums.length&&/[A-Za-z]{3,}/.test(text)&&!/\b(total|subtotal|sous-total|tax|tps|tvq|gst|pst|page|date|report|rapport|period)\b/i.test(text))other.push({li,text});});
-  const prev=D.salesImports[S.hash];const first=rows.find(r=>r.nums.length>1);
+  const seen={};rows.forEach(r=>{(seen[r.item.id]=seen[r.item.id]||[]).push(r);});Object.values(seen).forEach(g=>{if(g.length>1)g.forEach(r=>{r.dup=true;if(S.manual[r.li]==null)r.sure=false;});});
+  const prev=D.salesImports[S.hash];const first=rows.find(r=>!r.pos&&r.nums.length>1);
   const after=r=>{const sh=onShelf(r.item),fr=inStore(r.item),take=Math.min(r.q,sh+fr),cFirst=D.takeFrom==="counter",fromSh=cFirst?Math.min(take,sh):Math.max(0,take-fr),fromFr=take-fromSh;return {sh,fr,fromSh,fromFr,short:r.q-take};};
   sheet(`<h3 class="st">Deduct sales</h3><p style="margin:-6px 0 0;color:var(--mute)">${esc(S.file)} · ${S.lines.length} lines read · ${rows.length} matched to your items</p>
   ${S.ocr?'<div class="warnbox">Read from a photo: check each quantity against the printed report before deducting.</div>':""}
   ${prev?`<div class="warnbox">This report was already deducted on ${new Date(prev.at).toLocaleString()}. Deducting it again would remove the stock twice.</div>`:""}
   ${first?`<div class="recvbox"><span class="lbl">Which number is the quantity sold? (tap it once — the app remembers)</span><div class="mono" style="font-size:12px;color:var(--mute);word-break:break-word">${esc(first.text)}</div><div style="display:flex;gap:6px;flex-wrap:wrap">${first.nums.map((n,k)=>`<button class="chip" data-qi="${k}" aria-pressed="${k===first.idx}">${esc(n.raw)}</button>`).join("")}</div></div>`:""}
   <div class="recvbox"><span class="lbl">Take sold stock from</span><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="chip" data-tf="storage" aria-pressed="${D.takeFrom!=="counter"}">Storage first</button><button class="chip" data-tf="counter" aria-pressed="${D.takeFrom==="counter"}">Counter first</button></div></div>
-  <div class="list">${rows.map((r,k)=>{const a=after(r),u=esc(r.item.unit||"");return `<div class="rline"><div class="rh"><div><b>${esc(r.item.name)}</b>${r.sure?"":' <span class="pill p-low">Check</span>'}<br><small>${esc(r.text)}</small></div></div>
-    <div class="g2"><label class="mini">Sold (${u})<input data-sq="${r.li}" type="number" inputmode="decimal" step="any" value="${fmt(r.q)}"></label><div class="mini">After deducting<span style="font-size:13px;color:var(--ink);font-weight:600;padding-top:6px">Storage ${fmt(a.fr)} → ${fmt(a.fr-a.fromFr)} · Counter ${fmt(a.sh)} → ${fmt(a.sh-a.fromSh)} · Overall ${fmt(a.sh+a.fr)} → ${fmt(a.sh+a.fr-a.fromSh-a.fromFr)}</span></div></div>
+  <div class="list">${rows.map((r,k)=>{const a=after(r),u=esc(r.item.unit||"");return `<div class="rline"><div class="rh"><div><b>${esc(r.item.name)}</b>${r.sure?"":' <span class="pill p-low">Check</span>'}${r.dup?`<br><span style="font-size:12px;color:var(--low)">Two report lines went to this item — one code may be misread</span>`:""}${r.odd&&!r.dup?`<br><span style="font-size:12px;color:var(--low)">The code matched, but the name looks different</span>`:""}${r.clash&&S.manual[r.li]==null?`<br><span style="font-size:12px;color:var(--low)">Qty says ${fmt(r.pos.qty)}, Packages says ${r.pos.packs} — check the paper</span>`:""}<br><small>${r.pos?`${esc(r.pos.desc)} · ${esc(r.pos.code)} · ${fmt(r.pos.qty)} qty · ${r.pos.packs} pkg · ${money(r.pos.amount)}`:esc(r.text)}</small></div></div>
+    <div class="g2"><label class="mini">Sold (${u})${r.pos?` <span style="color:var(--mute);font-weight:500">${r.w?"from Qty / Wt":"from Packages"}</span>`:""}<input data-sq="${r.li}" type="number" inputmode="decimal" step="any" value="${fmt(r.q)}"></label><div class="mini">After deducting<span style="font-size:13px;color:var(--ink);font-weight:600;padding-top:6px">Storage ${fmt(a.fr)} → ${fmt(a.fr-a.fromFr)} · Counter ${fmt(a.sh)} → ${fmt(a.sh-a.fromSh)} · Overall ${fmt(a.sh+a.fr)} → ${fmt(a.sh+a.fr-a.fromSh-a.fromFr)}</span></div></div>
     ${a.short>0.0001?`<div class="warnbox">Only ${fmt(r.q-a.short)} ${u} on hand — ${fmt(a.short)} ${u} more was sold than the app has. Check your counts.</div>`:""}</div>`;}).join("")||'<div class="empty"><b>No lines matched your items yet</b>Link the report lines below to your items. The app remembers each link.</div>'}</div>
-  ${other.length?`<div class="sect"><h2>Not matched</h2><small>${other.length} lines</small></div><div class="panel" style="padding:4px 14px">${other.slice(0,60).map(o=>`<div style="padding:10px 0;border-top:1px solid var(--line)"><div class="mono" style="font-size:12px;word-break:break-word">${esc(o.text)}</div><select class="inp" data-ln="${o.li}" style="margin-top:6px;height:40px"><option value="">Link to an item…</option>${items().map(i=>`<option value="${esc(i.id)}">${esc(i.name)}</option>`).join("")}</select></div>`).join("")}</div>`:""}
+  ${other.length?`<div class="sect"><h2>Not matched</h2><small>${other.length} lines</small></div><div class="panel" style="padding:4px 14px">${other.slice(0,80).map(o=>`<div style="padding:10px 0;border-top:1px solid var(--line)">${o.pos?`<div style="font-size:14px;font-weight:600">${esc(o.pos.desc)}</div><div class="mono" style="font-size:12px;color:var(--mute)">${esc(o.pos.code)} · qty ${fmt(o.pos.qty)} · ${o.pos.packs} pkg · ${money(o.pos.amount)}</div>`:`<div class="mono" style="font-size:12px;word-break:break-word">${esc(o.text)}</div>`}<select class="inp" data-ln="${o.li}" style="margin-top:6px;height:40px"><option value="">Link to an item…</option>${(()=>{const d=o.pos?o.pos.desc:o.text,sc=items().map(i=>[i,itemSim(i,d)]).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,4);return (sc.length?`<optgroup label="Best guesses">${sc.map(([i])=>`<option value="${esc(i.id)}">★ ${esc(i.name)}</option>`).join("")}</optgroup><optgroup label="All items">`:"")+items().map(i=>`<option value="${esc(i.id)}">${esc(i.name)}</option>`).join("")+(sc.length?"</optgroup>":"");})()}</select></div>`).join("")}</div>`:""}
   <button class="btn b-out" id="slGo" ${rows.length?"":"disabled"}>Deduct ${rows.length} item${rows.length===1?"":"s"} from stock</button><button class="btn b-sec" id="slX">Cancel</button>`);
   $("slX").onclick=closeSheet;
   document.querySelectorAll("[data-tf]").forEach(b=>b.onclick=()=>{D.takeFrom=b.dataset.tf;save();salesReview(S);});
   document.querySelectorAll("[data-qi]").forEach(b=>b.onclick=()=>{D.salesTpl={idx:+b.dataset.qi};save();S.manual={};salesReview(S);});
   document.querySelectorAll("[data-sq]").forEach(inp=>inp.addEventListener("change",()=>{S.manual[+inp.dataset.sq]=num(inp.value);salesReview(S);}));
   document.querySelectorAll("[data-ln]").forEach(sel=>sel.addEventListener("change",()=>{const it=D.items[sel.value];if(!it)return;const text=S.lines[+sel.dataset.ln];
+    const PL=posLine(text);if(PL&&PL.code){it.salesCodes=it.salesCodes||[];if(!it.salesCodes.includes(PL.code))it.salesCodes.push(PL.code);if(PL.desc&&PL.desc.length>=4){it.salesNames=it.salesNames||[];const dn=PL.desc.replace(/^[^A-Za-z]+/,"");if(!it.salesNames.includes(dn))it.salesNames.push(dn);}save();toast("Linked to "+it.name+" — remembered for next time");salesReview(S);return;}
     const toks=text.split(" ");const code=toks.find(t=>/^[A-Z0-9-]{2,14}$/i.test(t)&&/\d/.test(t)&&!NUMRE.test(t.replace(/kg$/i,"")))||(NUMRE.test(toks[0])&&/^\d{2,8}$/.test(toks[0])&&toks.length>2?toks[0]:"");
     const name=toks.filter(t=>/[A-Za-z]{2,}/.test(t)&&!/^(kg|lb|lbs|ea|un)$/i.test(t)).join(" ");
     if(code){it.salesCodes=it.salesCodes||[];if(!it.salesCodes.includes(code))it.salesCodes.push(code);}else if(name){it.salesNames=it.salesNames||[];if(!it.salesNames.includes(name))it.salesNames.push(name);}
@@ -1270,7 +1314,7 @@ applyLook(document.documentElement.dataset.look||"violet");
 $("today").textContent=new Date().toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"});
 render();
 if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
-window.__D=()=>D;window.__parseInv=t=>parseInvoiceText(t);
+window.__D=()=>D;window.__ocrLines=(f,o)=>ocrLines(f,()=>{},o);window.__posLine=posLine;window.__posMerge=posMerge;window.__parseInv=t=>parseInvoiceText(t);
 })();
 </script>
 </body></html>
