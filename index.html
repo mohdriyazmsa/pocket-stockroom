@@ -368,7 +368,7 @@ html[data-look="bold"] .tab[aria-current="page"] svg{color:#ff3d7f!important}
     <button class="row" id="clearEx"><span class="ri" style="background:#ffe1e7;color:var(--out)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></span><div>Remove example data<small>Delete the sample items, suppliers and orders</small></div></button>
   </div>
   <div id="moreCf"></div>
-  <p style="color:var(--dim);font-size:12px;margin:14px 4px">Everything is saved on this iPhone only. Back up regularly.<br>App version 2026.11.09-g</p>
+  <p style="color:var(--dim);font-size:12px;margin:14px 4px">Everything is saved on this iPhone only. Back up regularly.<br>App version 2026.11.09-h</p>
 </section>
 </main>
 
@@ -402,7 +402,7 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const uid=p=>(p||"x")+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const num=v=>{const n=parseFloat(v);return isFinite(n)?n:0};
-const fmt=n=>{n=Math.round(n*100)/100;return Number.isInteger(n)?String(n):n.toFixed(2).replace(/0+$/,"").replace(/\.$/,"");};
+const fmt=n=>{n=Math.round(n*1000)/1000;return Number.isInteger(n)?String(n):n.toFixed(3).replace(/0+$/,"").replace(/\.$/,"");};
 const money=n=>n>=1e5?"$"+Math.round(n/1e3)+"k":n>=1e4?"$"+(Math.round(n/100)/10)+"k":"$"+n.toLocaleString(undefined,n<1000?{minimumFractionDigits:2,maximumFractionDigits:2}:{maximumFractionDigits:0});
 const DAY=864e5, today0=()=>{const d=new Date();d.setHours(0,0,0,0);return d.getTime();};
 const isoIn=d=>new Date(Date.now()+d*DAY).toISOString().slice(0,10);
@@ -640,19 +640,24 @@ function closeSheet(){$("sheetRoot").innerHTML="";}
 function sheet(html){$("sheetRoot").innerHTML=`<div class="sbg" id="sbg"><div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div>${html}</div></div>`;$("sbg").addEventListener("click",e=>{if(e.target.id==="sbg")closeSheet();});}
 const supOptions=sel=>`<option value="">No supplier</option>`+Object.values(D.suppliers).sort((a,b)=>a.name.localeCompare(b.name)).map(s=>`<option value="${esc(s.id)}" ${s.id===sel?"selected":""}>${esc(s.name)}</option>`).join("");
 
-function openItem(id){
+function openItem(id,preset){
   const i=D.items[id];if(!i)return;const {cls}=abcClass(),a=avgDaily(id),dl=daysLeft(i),lots=lotsFIFO(i),hist=D.moves.filter(m=>m.itemId===id).slice(0,5),s=supplierOf(i);
   sheet(`<div class="shh">${badge(i)}<div><h3>${esc(i.name)}</h3><p class="mono">${esc(i.code||"no code")}${i.category?" · "+esc(i.category):""}${s?" · "+esc(s.name):""}</p></div></div>
   <div class="meta" style="margin:0">${pills(i,cls[id])}</div>
   <div class="counter"><div class="big">${fmt(qty(i))}</div><small>${esc(i.unit||"units")} on hand${num(i.reorder)?" · reorder at "+fmt(num(i.reorder)):""}${num(i.par)?" · order up to "+fmt(num(i.par)):""}</small>
     <div class="stats3"><div><b>${a?fmt(a):"–"}</b><span>per day</span></div><div><b>${dl===Infinity?"–":dl<1?"<1":Math.round(dl)}</b><span>days left</span></div><div><b>${num(i.cost)?money(value(i)):"–"}</b><span>value</span></div></div>
-    <div class="stepper"><button id="mn" aria-label="Less">−</button><input id="qty" type="number" inputmode="decimal" value="1" min="0" step="any" aria-label="Quantity"><button id="pl" aria-label="More">+</button></div></div>
+    <div class="stepper"><button id="mn" aria-label="Less">−</button><input id="qty" type="number" inputmode="decimal" value="${preset?preset.q:1}" min="0" step="any" aria-label="Quantity"><button id="pl" aria-label="More">+</button></div>${preset?`<small style="color:var(--info);font-weight:700">Scanned: ${esc(preset.label)}</small>`:""}</div>
   <div class="recvbox"><span class="lbl">Batch details (used when receiving)</span><div class="g2"><input class="inp mono" id="rLot" placeholder="Lot no. (auto)"><input class="inp" id="rExp" type="date" aria-label="Expiry date"></div><input class="inp" id="note" placeholder="Note · PO, supplier, reason"></div>
   <div class="act"><button class="btn b-in" id="recv">＋ Receive</button><button class="btn b-out" id="use">− Use (FIFO)</button></div>
   <div class="act"><button class="btn b-sec" id="count">Set exact count</button><button class="btn b-sec" id="toShelf">Move to shelf →</button></div>
   <div class="split2"><div><b class="mono">${fmt(qty(i)-onShelf(i))}</b><span>In fridge</span></div><div><b class="mono">${fmt(onShelf(i))}</b><span>On shelf</span></div></div>
   <div class="panel" style="padding:6px 16px"><div class="sect" style="margin:8px 0 2px"><h2>Lots</h2><small>oldest expiry used first</small></div>
     ${lots.length?lots.map((l,k)=>`<div class="lot"><b>${esc(l.lot)} <span class="pill ${l.loc==="shelf"?"p-a":""}" style="margin-left:4px">${l.loc==="shelf"?"Shelf":"Fridge"}</span>${k===0?' <span class="pill p-info" style="margin-left:4px">Next out</span>':""}</b><span>${l.expiry?"Expires "+new Date(l.expiry+"T00:00").toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}):"No expiry"} · received ${new Date(l.at).toLocaleDateString(undefined,{month:"short",day:"numeric"})}</span><span class="r"><b class="mono" style="font-size:16px">${fmt(num(l.qty))}</b>${l.pcs?`<br><span style="font-size:11px;color:var(--mute)">${l.pcs} case${l.pcs===1?"":"s"}</span>`:""}<br>${expPill(l.expiry)}</span></div>`).join(""):'<p style="color:var(--mute);margin:8px 0 12px">No stock on hand.</p>'}</div>
+  <div class="panel" style="padding:6px 16px 14px"><div class="sect" style="margin:8px 0 6px"><h2>Codes for this product</h2><small>all point to this item</small></div>
+    <div class="kv">${allCodes(i).map(c=>`<span>${esc(c.name?c.name+" barcode":"Barcode")}</span><b class="mono">${esc(c.code)}${num(c.per)?` <span style="color:var(--mute);font-family:var(--f-body)">· 1 = ${fmt(num(c.per))} ${esc(i.unit||"")}</span>`:""}</b>`).join("")||'<span>Barcode</span><b style="color:var(--low)">none yet</b>'}
+    ${Object.entries(i.supCodes||{}).map(([k,v])=>`<span>Invoice product no.</span><b class="mono">${esc(v)} <span style="color:var(--mute);font-family:var(--f-body)">· ${esc(titleCase(k))}</span></b>`).join("")}
+    ${(i.salesCodes||[]).length?`<span>POS / sales code</span><b class="mono">${esc(i.salesCodes.join(", "))}</b>`:""}</div>
+    <button class="btn b-sec" id="addCode" style="margin-top:12px">＋ Scan & link another barcode</button></div>
   ${hist.length?`<div class="panel" style="padding:6px 16px">${hist.map(m=>`<div class="mv"><span class="ic" style="background:${m.delta>=0?"#dcf5ea":"#ffe1e7"};color:${m.delta>=0?"var(--ok)":"var(--out)"}">${m.delta>=0?"↓":"↑"}</span><span class="t">${m.type==="receive"?"Received":m.type==="count"?"Count adjust":m.type==="move"?"Moved to shelf":"Used"}${m.lot?" · "+esc(m.lot):""}</span><span class="d ${m.delta>=0?"in":"out"}">${m.delta>=0?"+":"−"}${fmt(Math.abs(m.delta))}</span><span class="s">${m.note?esc(m.note)+" · ":""}${new Date(m.at).toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}</span></div>`).join("")}</div>`:""}
   <div class="act"><button class="btn b-sec" id="edit">Edit details</button><button class="btn b-dan" id="del">Delete</button></div><div id="cf"></div>`);
   hydrate($("sheetRoot"));const q=$("qty");$("mn").onclick=()=>q.value=Math.max(0,num(q.value)-1);$("pl").onclick=()=>q.value=num(q.value)+1;
@@ -661,6 +666,7 @@ function openItem(id){
   $("count").onclick=()=>{setCount(i,num(q.value),$("note").value.trim());save();render();closeSheet();toast("Count set to "+fmt(qty(i)));};
   $("toShelf").onclick=()=>{const n=num(q.value);if(n<=0)return q.focus();const inv=qty(i)-onShelf(i);if(inv<=0){toast("Nothing left in the fridge to move");return;}const m=moveToShelf(i,Math.min(n,inv));save();render();closeSheet();toast("Moved "+fmt(m)+" "+(i.unit||"")+" to the shelf");};
   $("edit").onclick=()=>itemForm(i);
+  $("addCode").onclick=()=>{PENDING_LINK=id;closeSheet();toast("Scan the barcode to link to "+i.name);setTimeout(()=>$("liveBtn").click(),250);};
   $("del").onclick=()=>{$("cf").innerHTML=`<div class="confirm"><span style="flex:1">Delete ${esc(i.name)} and its lots? History stays.</span><button class="btn sm b-out" id="yes">Delete</button><button class="btn sm b-sec" id="no">Keep</button></div>`;$("no").onclick=()=>$("cf").innerHTML="";$("yes").onclick=()=>{delete D.items[id];PH.del(id);save();render();closeSheet();toast("Deleted");};};
 }
 function openProduct(id){
@@ -698,13 +704,13 @@ function itemForm(ex,code,asProduct,pre){pre=pre||{};
   <label class="field">Supplier<select id="fSup">${supOptions(i.supplierId)}</select></label>
   <label class="field">Code in sales report (optional)<input id="fSalesCode" class="mono" value="${esc((i.salesCodes||[]).join(", "))}" placeholder="PLU / item no. used by your sales system"></label>
   <label class="field">Supplier's product no. (on invoices)<input id="fSupCode" class="mono" value="${esc(((i.supCodes||{})[nkey((D.suppliers[i.supplierId]||{}).name)])||"")}" placeholder="e.g. 807"></label>
-  ${(i.alt||[]).length?`<div class="field">Other barcodes<div style="display:flex;gap:6px;flex-wrap:wrap" id="fAlt">${i.alt.map((a,k)=>`<span class="pill mono">${esc(a)} <button type="button" data-ra="${k}" aria-label="Remove" style="font-weight:800">✕</button></span>`).join("")}</div></div>`:""}
+  ${ex&&allCodes(i).length?`<div class="field">Barcodes for this product<div id="fCodes" style="display:flex;flex-direction:column;gap:8px">${allCodes(i).map((c,k)=>`<div class="g3" data-cc="${esc(c.code)}" style="align-items:end"><span class="mono" style="font-size:13px;color:var(--ink);word-break:break-all">${esc(c.code)}${k===0?'<br><small style="color:var(--mute)">main</small>':""}</span><select class="inp" data-cn style="height:42px">${["","Case","Pack","Other"].map(n=>`<option value="${n}" ${n===(c.name||"")?"selected":""}>${n||"Type…"}</option>`).join("")}</select><div style="display:flex;gap:6px"><input class="inp" data-cp type="number" inputmode="decimal" step="any" placeholder="qty in one" value="${c.per||""}" style="height:42px">${k>0?`<button type="button" class="btn sm b-dan" data-ra="${esc(c.code)}" aria-label="Remove">✕</button>`:""}</div></div>`).join("")}</div></div>`:""}
   ${/^2\d{6}$/.test(String(i.code||""))?`<label class="field">In-store barcode value<select id="fVm"><option value="weight" ${i.vmType!=="price"?"selected":""}>Weight (kg) is inside the barcode</option><option value="price" ${i.vmType==="price"?"selected":""}>Price is inside the barcode</option></select></label>`:""}
   <p style="color:var(--mute);font-size:12px;margin:-4px 2px 0">Sold by weight? Set the unit to kg or lb. GS1 labels with a net weight then add the exact weight on each scan.</p>
   <button class="btn b-pri" type="submit">${ex?"Save changes":"Add to stock"}</button><button class="btn b-sec" type="button" id="cancel">Cancel</button></form>`);
   $("cancel").onclick=closeSheet;hydrate($("sheetRoot"));
   let newPhoto=null,dropPhoto=false,altList=[...(i.alt||[])];
-  if($("fAlt"))$("fAlt").addEventListener("click",e=>{const b=e.target.closest("[data-ra]");if(!b)return;altList.splice(+b.dataset.ra,1);b.closest(".pill").remove();});
+  if($("fCodes"))$("fCodes").addEventListener("click",e=>{const b=e.target.closest("[data-ra]");if(!b)return;altList=altList.filter(a=>a!==b.dataset.ra);b.closest("[data-cc]").remove();});
   $("fPhoto").addEventListener("change",async e=>{const f=e.target.files&&e.target.files[0];if(!f)return;try{newPhoto=await shrink(f,900);dropPhoto=false;const pv=$("fPv");pv.textContent="";const im=new Image();im.src=URL.createObjectURL(newPhoto);pv.appendChild(im);}catch(err){toast("Couldn't read that photo");}});
   if($("fPhDel"))$("fPhDel").onclick=()=>{dropPhoto=true;newPhoto=null;$("fPv").innerHTML="No photo";};
   $("f").onsubmit=async e=>{e.preventDefault();const name=$("fName").value.trim();if(!name)return;const c=$("fCode").value.trim();
@@ -712,6 +718,7 @@ function itemForm(ex,code,asProduct,pre){pre=pre||{};
     const d={name,code:c,unit:$("fUnit").value.trim()||"units",category:$("fCat").value.trim(),reorder:num($("fRe").value),par:num($("fPar").value),cost:num($("fCost").value),price:num($("fPrice").value),description:$("fDesc").value.trim(),shelf:num($("fShelf").value),alt:altList,...($("fVm")?{vmType:$("fVm").value}:{}),location:$("fLoc").value.trim(),supplierId:$("fSup").value,updatedAt:Date.now()};
     let id;if(ex){id=ex.id;Object.assign(D.items[id],d);if(ex.example)D.items[id].example=false;toast("Saved");}
     else{id=uid("i");D.items[id]={...d,id,lots:[]};const q=num($("fQty").value);if(q>0)receive(D.items[id],q,$("fLot").value,$("fExp").value,"Starting stock",null,0,pre.pcs||0);toast("Added "+name);}
+    if($("fCodes")){const cm={};document.querySelectorAll("#fCodes [data-cc]").forEach(r=>{const n=r.querySelector("[data-cn]").value,p=num(r.querySelector("[data-cp]").value);if(n||p)cm[normCode(r.dataset.cc)]={name:n,per:p};});D.items[id].cmeta=cm;}
     D.items[id].salesCodes=$("fSalesCode").value.split(/[,\s]+/).map(x=>x.trim()).filter(Boolean);
     {const sc=$("fSupCode").value.trim(),sn=nkey((D.suppliers[D.items[id].supplierId]||{}).name);if(sn){D.items[id].supCodes=D.items[id].supCodes||{};if(sc)D.items[id].supCodes[sn]=sc;else delete D.items[id].supCodes[sn];}}
     try{if(newPhoto){await PH.put(id,newPhoto);D.items[id].photo=true;}else if(dropPhoto){await PH.del(id);D.items[id].photo=false;}}catch(err){toast("Saved, but the photo couldn't be stored");}
@@ -1036,8 +1043,11 @@ function scanResult(r,i){
   let q,w=false,vmPrice=null;const newUnit=r.netLb!=null&&r.netKg==null?"lb":(r.netKg!=null?"kg":"units");const ref=i||{unit:newUnit};
   if(r.kind==="vm"){if(i&&i.vmType==="price"){vmPrice=r.value/100;q=num(i.price)?Math.round(vmPrice/num(i.price)*1000)/1000:1;w=true;}else{r.netKg=r.value/1000;const x=qtyFor(r,ref);q=x.q;w=x.w;}}
   else{const x=qtyFor(r,ref);q=x.q;w=x.w;}
+  let packNote="";if(i&&!w&&r.kind==="gs1"){const m=codeMeta(i,r.gtin),pp=packPer(i);
+    if(r.count!=null&&pp>0&&(!m||m.name!=="Pack")){q=Math.round(r.count*pp*1000)/1000;packNote=`${fmt(r.count)} packs × ${fmt(pp)} ${i.unit} = ${fmt(q)} ${i.unit}`;}
+    else if(m&&num(m.per)>0){q=num(m.per);packNote=`1 ${(m.name||"unit").toLowerCase()} = ${fmt(q)} ${i.unit}`;}}
   const unit=i?(i.unit||"units"):newUnit;
-  const rows=[];if(r.kind==="gs1"){rows.push(["GTIN",r.gtin]);if(r.netKg!=null)rows.push(["Net weight",(+r.netKg.toFixed(3))+" kg"]);if(r.netLb!=null)rows.push(["Net weight",(+r.netLb.toFixed(3))+" lb"]);if(r.count!=null)rows.push(["Count",fmt(r.count)]);
+  const rows=[];if(packNote)rows.push(["Quantity",packNote]);if(r.kind==="gs1"){rows.push(["GTIN",r.gtin]);if(r.netKg!=null)rows.push(["Net weight",(+r.netKg.toFixed(3))+" kg"]);if(r.netLb!=null)rows.push(["Net weight",(+r.netLb.toFixed(3))+" lb"]);if(r.count!=null)rows.push(["Count",fmt(r.count)]);
     if(r.lot)rows.push(["Lot / batch",r.lot]);if(r.expiry)rows.push([r.expLabel,new Date(r.expiry+"T00:00").toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"})]);if(r.prod)rows.push(["Produced / packed",new Date(r.prod+"T00:00").toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"})]);if(r.serial)rows.push(["Serial",r.serial]);if(r.price!=null)rows.push(["Price on label","$"+r.price.toFixed(2)]);}
   else{rows.push(["Item code",r.code]);rows.push([i&&i.vmType==="price"?"Price on label":"Weight in code",i&&i.vmType==="price"?"$"+vmPrice.toFixed(2):fmt(r.value/1000)+" kg"]);}
   sheet(`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span class="pill p-info">${esc(r.label||(r.kind==="gs1"?"GS1 barcode":"Weighed-item barcode"))}</span>${r.kind==="gs1"&&!r.checkOK?'<span class="pill p-low">Check digit mismatch</span>':""}${r.tpl?'<span class="pill p-ok">Learned label</span>':r.kind==="gs1"&&r.odd?'<span class="pill p-low">Non-standard label</span>':""}${w?'<span class="pill p-a">Weight read from label</span>':r.count!=null?'<span class="pill p-a">Count read from label</span>':""}</div>
@@ -1049,7 +1059,7 @@ function scanResult(r,i){
   ${i?`<div class="act"><button class="btn b-in" id="sRecv">＋ Receive</button><button class="btn b-out" id="sUse">− Use</button></div><button class="btn b-pri" id="sNext">Receive & scan next</button><button class="btn b-sec" id="sOpen">Open item</button>`
      :`<button class="btn b-pri" id="sLink">Link to an existing item</button><button class="btn b-sec" id="sNew">Create product with these details</button>`}`);
   if($("sTeach"))$("sTeach").onclick=()=>teachLabel(r,i);
-  if(!i)$("sLink").onclick=()=>linkPicker(r.kind==="gs1"?r.gtin:r.code,it=>scanResult(r,it));
+  if(!i)$("sLink").onclick=()=>{LINKCTX={count:r.count};linkPicker(r.kind==="gs1"?r.gtin:r.code,it=>scanResult(r,it));};
   if(!i){$("sNew").onclick=()=>itemForm(null,r.kind==="gs1"?r.gtin:r.code,false,{qty:num($("sQty").value),lot:$("sLot").value,exp:$("sExp").value,unit:unit,pcs:w?1:0});return;}
   const doRecv=()=>{const n=num($("sQty").value);if(n<=0){$("sQty").focus();return false;}receive(i,n,$("sLot").value,$("sExp").value,r.serial?"Serial "+r.serial:"",null,0,w?1:0);save();render();toast("Received "+fmt(n)+" "+(i.unit||"")+" · now "+fmt(qty(i)));return true;};
   $("sRecv").onclick=()=>{if(doRecv())closeSheet();};
@@ -1061,21 +1071,39 @@ function guessFmt(code){if(/^\d{13}$/.test(code))return"EAN_13";if(/^\d{12}$/.te
 function detectLabel(code,fmt,g,vm){const f=fmt||guessFmt(code),base=FMT[f]||(fmt?fmt:"Typed code");
   if(g)return f==="CODE_128"?"GS1-128":f==="DATA_MATRIX"?"GS1 DataMatrix":f==="QR_CODE"?"GS1 QR code":/^RSS/.test(f)?base:"GS1 barcode";
   if(vm)return base+" · in-store weighed item";if(/^\d{14}$/.test(code)&&(f==="ITF"||!fmt))return"ITF-14 / GTIN-14 (case)";return base;}
-function linkCode(it,code){if(!it.code)it.code=code;else if(normCode(it.code)!==normCode(code)){it.alt=it.alt||[];if(!it.alt.some(a=>normCode(a)===normCode(code)))it.alt.push(code);}it.updatedAt=Date.now();save();render();}
+function codeMeta(i,code){return i&&code?((i.cmeta||{})[normCode(code)]||null):null;}
+function packPer(i){const m=Object.values(i.cmeta||{}).find(x=>x.name==="Pack"&&num(x.per)>0);return m?num(m.per):0;}
+function allCodes(i){return [i.code,...(i.alt||[])].filter(Boolean).map(c=>({code:c,...(codeMeta(i,c)||{})}));}
+function linkCode(it,code,meta){if(!it.code)it.code=code;else if(normCode(it.code)!==normCode(code)){it.alt=it.alt||[];if(!it.alt.some(a=>normCode(a)===normCode(code)))it.alt.push(code);}
+  if(meta){it.cmeta=it.cmeta||{};it.cmeta[normCode(code)]={name:meta.name||"",per:num(meta.per)};}it.updatedAt=Date.now();save();render();}
+function askPackaging(it,code,ctx,after){ctx=ctx||{};const cur=codeMeta(it,code)||{},u=esc(it.unit||"units"),pp=packPer(it);
+  sheet(`<h3 class="st">What is this barcode on?</h3><p style="margin:-6px 0 0;color:var(--mute)"><b>${esc(it.name)}</b> · barcode <span class="mono">${esc(code)}</span></p>
+  <div style="display:flex;gap:8px;flex-wrap:wrap" id="pkN">${["Case","Pack","Other"].map(n=>`<button class="chip" data-pk="${n}" aria-pressed="${(cur.name||"")===n}">${n==="Case"?"Case / box":n==="Pack"?"Pack / unit":"Other"}</button>`).join("")}</div>
+  <label class="field">How much is in one (in ${u})?<input id="pkPer" type="number" inputmode="decimal" step="any" min="0" value="${cur.per||""}" placeholder="e.g. ${isW(it.unit)?"0.125":"15"}"></label>
+  <p style="color:var(--mute);font-size:12.5px;margin:-4px 2px 0;line-height:1.5" id="pkHint">Used as the quantity when you scan this barcode. Leave empty if the label carries its own weight (it will be read from the label).</p>
+  <button class="btn b-pri" id="pkSave">Save</button><button class="btn b-sec" id="pkSkip">Skip</button>`);
+  const hint=()=>{const n=(document.querySelector('#pkN [aria-pressed="true"]')||{}).dataset;const nm=n&&n.pk;if(nm==="Case"&&ctx.count&&pp){$("pkPer").value=Math.round(ctx.count*pp*1000)/1000;$("pkHint").textContent=`Label says ${ctx.count} packs × ${fmt(pp)} ${it.unit} per pack = ${fmt(ctx.count*pp)} ${it.unit}. Scans of this case use the count on each label.`;}};
+  $("pkN").onclick=e=>{const b=e.target.closest("[data-pk]");if(!b)return;document.querySelectorAll("#pkN .chip").forEach(x=>x.setAttribute("aria-pressed",x===b));hint();};
+  $("pkSkip").onclick=()=>{linkCode(it,code);after(it);};
+  $("pkSave").onclick=()=>{const nm=((document.querySelector('#pkN [aria-pressed="true"]')||{}).dataset||{}).pk||"";linkCode(it,code,{name:nm,per:num($("pkPer").value)});toast("Barcode saved"+(nm?" as "+nm.toLowerCase():""));after(it);};}
 function linkPicker(code,after){const all=items().sort((a,b)=>(a.code?1:0)-(b.code?1:0)||String(a.name).localeCompare(String(b.name)));
   sheet(`<h3 class="st">Link barcode to an item</h3><p style="margin:-6px 0 0;color:var(--mute)">Barcode <span class="mono">${esc(code)}</span> will open this item from now on. Items without a barcode (for example ones created from an invoice) are listed first.</p>
   <label class="search" style="margin:0"><input id="lkQ" placeholder="Search items or product no." autocomplete="off"></label><div class="list" id="lkL"></div><button class="btn b-sec" id="lkX">Cancel</button>`);
   const draw=()=>{const q=$("lkQ").value.trim().toLowerCase();$("lkL").innerHTML=all.filter(i=>!q||[i.name,i.code,i.invName,...Object.values(i.supCodes||{})].join(" ").toLowerCase().includes(q)).slice(0,40).map(i=>`<button class="card" data-lnk="${esc(i.id)}">${badge(i)}<span class="nm">${esc(i.name)}</span><span class="q"><b style="font-size:16px">${fmt(qty(i))}</b><span>${esc(i.unit||"")}</span></span><span class="sub">${i.code?"barcode "+esc(i.code):'<b style="color:var(--low)">no barcode yet</b>'}${Object.values(i.supCodes||{}).length?" · product no. "+esc(Object.values(i.supCodes).join(", ")):""}</span></button>`).join("")||'<div class="empty">No items match.</div>';hydrate($("lkL"));};
   draw();$("lkQ").addEventListener("input",draw);$("lkX").onclick=closeSheet;
-  $("lkL").addEventListener("click",e=>{const b=e.target.closest("[data-lnk]");if(!b)return;e.stopPropagation();const it=D.items[b.dataset.lnk];linkCode(it,code);toast("Barcode linked to "+it.name);after(it);},true);}
+  $("lkL").addEventListener("click",e=>{const b=e.target.closest("[data-lnk]");if(!b)return;e.stopPropagation();const it=D.items[b.dataset.lnk];askPackaging(it,code,LINKCTX,after);},true);}
+let LINKCTX={},PENDING_LINK=null;
 function unknownCode(code,label){sheet(`<span class="pill p-info" style="align-self:flex-start">${esc(label)}</span><h3 class="st">New barcode</h3><p class="mono" style="margin:-6px 0 0;color:var(--mute);word-break:break-all">${esc(code)}</p>
   <p style="margin:0;color:var(--mute)">Is this a new product, or one you already have (for example from an invoice)?</p>
   <button class="btn b-pri" id="ucLink">Link to an existing item</button><button class="btn b-sec" id="ucNew">Create a new item</button>`);
-  $("ucNew").onclick=()=>itemForm(null,code);$("ucLink").onclick=()=>linkPicker(code,it=>openItem(it.id));}
-function handleCode(code,fmt){code=String(code||"").trim();if(!code)return;scanMsg("");
-  const g=parseGS1(code);if(g){g.label=detectLabel(code,fmt,g,null);applyTemplate(g);scanResult(g,byCode(g.gtin));return;}
-  const vm=parseVM(code);const vmIt=vm&&byCode(vm.code);if(vmIt){vm.label=detectLabel(code,fmt,null,vm);scanResult(vm,vmIt);return;}
-  const label=detectLabel(code,fmt,null,null);const hit=byCode(code);if(hit){openItem(hit.id);toast(label+" · "+hit.name);}else unknownCode(code,label);}
+  $("ucNew").onclick=()=>itemForm(null,code);$("ucLink").onclick=()=>{LINKCTX={};linkPicker(code,it=>openItem(it.id));};}
+function handleCode(code,bfmt){code=String(code||"").trim();if(!code)return;scanMsg("");
+  if(PENDING_LINK){const it=D.items[PENDING_LINK];PENDING_LINK=null;if(it){const g0=parseGS1(code),key=g0?g0.gtin:code,other=byCode(key);
+    if(other&&other.id!==it.id){sheet(`<h3 class="st">Barcode already used</h3><p style="color:var(--mute);margin:0">This barcode belongs to <b>${esc(other.name)}</b>. Remove it there first (Edit details) if it should move.</p><button class="btn b-sec" id="x1">OK</button>`);$("x1").onclick=()=>openItem(it.id);return;}
+    askPackaging(it,key,{count:g0?g0.count:null},x=>openItem(x.id));return;}}
+  const g=parseGS1(code);if(g){g.label=detectLabel(code,bfmt,g,null);applyTemplate(g);scanResult(g,byCode(g.gtin));return;}
+  const vm=parseVM(code);const vmIt=vm&&byCode(vm.code);if(vmIt){vm.label=detectLabel(code,bfmt,null,vm);scanResult(vm,vmIt);return;}
+  const label=detectLabel(code,bfmt,null,null);const hit=byCode(code);if(hit){const m=codeMeta(hit,code);openItem(hit.id,m&&num(m.per)>0?{q:num(m.per),label:(m.name||"This barcode")+" = "+fmt(num(m.per))+" "+(hit.unit||"")}:null);toast(label+" · "+hit.name);}else unknownCode(code,label);}
 window.__scan=handleCode;
 function scanMsg(t){$("scanMsg").textContent=t||"";$("scanMsg").hidden=!t;if(t&&tab!=="stock")setTab("stock");}
 
@@ -1115,7 +1143,7 @@ async function photoScan(e){const f=e.target.files&&e.target.files[0];e.target.v
 $("cam").addEventListener("change",photoScan);$("salesPdf").addEventListener("change",salesImport);$("salesPdf2").addEventListener("change",salesImport);$("cam2").addEventListener("change",photoScan);
 let stream=null,scanning=false,timer=null,misses=0,lastRead="",lastAt=0;
 function stopLive(){$("zoomBar").hidden=true;$("hint2").hidden=true;scanning=false;clearTimeout(timer);try{stream&&stream.getTracks().forEach(t=>t.stop());}catch(e){}stream=null;$("vid").srcObject=null;$("live").hidden=true;$("torch").hidden=true;}
-$("liveClose").onclick=stopLive;
+$("liveClose").onclick=()=>{const p=PENDING_LINK;PENDING_LINK=null;stopLive();if(p&&D.items[p])openItem(p);};
 $("liveBtn").onclick=async()=>{scanMsg("");
   if(!ready()){scanMsg("The barcode reader didn't load. Connect to the internet once, then try again.");return;}
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){scanMsg("Live camera isn't available here. Use More › Scan from a photo.");return;}
