@@ -202,8 +202,8 @@ h2{font-family:var(--f-disp);font-stretch:112%;font-size:17px;font-weight:800;ma
 .msg{margin-top:12px;border-radius:14px;padding:12px 14px;font-size:14px;font-weight:600;background:#ffe1e7;color:var(--out)}
 
 /* catalog */
-.mode{display:grid;grid-template-columns:1fr 1fr;background:var(--s1);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px;margin-top:14px}
-.mode button{height:38px;border-radius:10px;font-weight:700;font-size:13px;color:var(--mute);display:flex;align-items:center;justify-content:center;gap:6px}
+.mode{display:grid;grid-template-columns:repeat(3,1fr);background:var(--s1);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px;margin-top:14px}
+.mode button{height:38px;border-radius:10px;font-weight:700;font-size:12px;white-space:nowrap;color:var(--mute);display:flex;align-items:center;justify-content:center;gap:6px}
 .mode button[aria-pressed="true"]{background:var(--grad);color:#fff}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .pc{background:var(--s1);border:1px solid var(--line);border-radius:20px;overflow:hidden;text-align:left;display:flex;flex-direction:column;box-shadow:0 1px 2px rgba(16,23,49,.04),0 4px 14px rgba(16,23,49,.05);transition:transform .12s}
@@ -307,11 +307,12 @@ html[data-look="bold"] .tab[aria-current="page"] svg{color:#ff3d7f!important}
       <button class="tile" data-attn="1"><b id="tLow">–</b><span><i class="dot" style="background:#ffb27a"></i>Low / out</span></button>
       <button class="tile" data-attn="1"><b id="tExp">–</b><span><i class="dot" style="background:#f0c4ff"></i>Expiring 7d</span></button>
     </div></div></div>
-  <div class="mode" id="mode"><button data-m="list" aria-pressed="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>Stock list</button><button data-m="cat" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>Catalog</button></div>
+  <div class="mode" id="mode"><button data-m="list" aria-pressed="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>Stock list</button><button data-m="loc" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M5 10h14M8 6.5v1M8 13v2"/></svg>Shelf &amp; fridge</button><button data-m="cat" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>Catalog</button></div>
   <label class="search"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="search" placeholder="Search products, codes, lots, locations" autocomplete="off" aria-label="Search"></label>
   <div id="scanMsg" class="msg" hidden></div>
   <div class="chips" id="chips"></div>
   <div class="sect"><h2 id="listTitle">All items</h2><small id="listCount"></small></div>
+  <div id="locTools" hidden style="display:flex;gap:8px;margin:-2px 0 12px"><label class="btn sm b-pri" for="salesPdf" style="flex:1">Scan sales report</label><button class="btn sm b-sec" id="locShare" style="flex:1">Share stock count</button></div>
   <div id="catTools" hidden style="display:flex;gap:8px;margin:-2px 0 12px"><button class="btn sm b-sec" id="catAdd" style="flex:1">＋ New product</button><button class="btn sm b-sec" id="catShare" style="flex:1">Share catalog</button></div>
   <div class="list" id="list"></div>
 </section>
@@ -363,10 +364,11 @@ html[data-look="bold"] .tab[aria-current="page"] svg{color:#ff3d7f!important}
     <label class="row" for="restoreIn"><span class="ri"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/></svg></span><div>Restore from backup<small>Replace this phone's data with a backup file</small></div><input id="restoreIn" type="file" accept=".json,application/json" hidden></label>
     <label class="row" for="cam"><span class="ri"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="6" width="18" height="14" rx="3"/><circle cx="12" cy="13" r="3.5"/></svg></span><div>Scan from a photo<small>If live scanning struggles</small></div><input id="cam" type="file" accept="image/*" capture="environment" hidden></label>
     <button class="row" id="typeCode"><span class="ri"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="6" width="18" height="12" rx="3"/><path d="M7 10h.01M11 10h.01M15 10h.01M8 14h8"/></svg></span><div>Type or paste a barcode<small>Works with GS1 codes like (01)…(3103)…(17)…(10)…</small></div></button>
+    <label class="row" for="salesPdf2"><span class="ri"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 14h6M12 11v6"/></svg></span><div>Scan POS sales report<small>Choose the exported PDF or take a photo of the printed report — sold quantities come off the shelf, then the fridge</small></div><input id="salesPdf2" type="file" accept="application/pdf,.pdf,image/*" hidden></label>
     <button class="row" id="clearEx"><span class="ri" style="background:#ffe1e7;color:var(--out)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></span><div>Remove example data<small>Delete the sample items, suppliers and orders</small></div></button>
   </div>
   <div id="moreCf"></div>
-  <p style="color:var(--dim);font-size:12px;margin:14px 4px">Everything is saved on this iPhone only. Back up regularly.<br>App version 2026.11.09-f</p>
+  <p style="color:var(--dim);font-size:12px;margin:14px 4px">Everything is saved on this iPhone only. Back up regularly.<br>App version 2026.11.09-g</p>
 </section>
 </main>
 
@@ -386,6 +388,7 @@ html[data-look="bold"] .tab[aria-current="page"] svg{color:#ff3d7f!important}
   <div class="bot"><label class="round" for="cam2" aria-label="Take a photo instead"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="14" rx="3"/><circle cx="12" cy="13" r="3.5"/><path d="M8 6l1.5-2h5L16 6"/></svg><input id="cam2" type="file" accept="image/*" capture="environment" hidden></label><button class="round" id="torch" hidden aria-label="Flashlight"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></button>
   <button class="round x" id="liveClose" aria-label="Close scanner"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
 </div>
+<input id="salesPdf" type="file" accept="application/pdf,.pdf,image/*" hidden>
 <div id="sheetRoot"></div>
 <div class="toast" id="toast" hidden></div>
 <canvas id="cv" hidden></canvas>
@@ -407,7 +410,7 @@ function toast(t){const el=$("toast");el.textContent=t;el.hidden=false;clearTime
 
 /* ===================== DATA ===================== */
 const K3="pocket-stockroom-v3",K1="pocket-stockroom-v1";
-let D={items:{},suppliers:{},pos:{},moves:[],labels:{},receipts:{}};
+let D={items:{},suppliers:{},pos:{},moves:[],labels:{},receipts:{},salesImports:{}};
 function save(){try{localStorage.setItem(K3,JSON.stringify(D));}catch(e){toast("Phone storage is full. Back up and remove old data.");}}
 function load(){
   try{const d=JSON.parse(localStorage.getItem(K3)||"null");if(d){D={items:{},suppliers:{},pos:{},moves:[],labels:{},receipts:{},...d};return;}}catch(e){}
@@ -478,7 +481,7 @@ const onShelf=i=>(i.lots||[]).filter(l=>l.loc==="shelf").reduce((s,l)=>s+num(l.q
 function moveToShelf(i,n){let left=n;const back=lotsFIFO(i).filter(l=>l.loc!=="shelf");const moved=[];
   for(const l of back){if(left<=0)break;const t=Math.min(num(l.qty),left);l.qty=Math.round((num(l.qty)-t)*1e6)/1e6;left-=t;
     const sh=(i.lots||[]).find(x=>x.loc==="shelf"&&x.lot===l.lot&&(x.expiry||"")===(l.expiry||""));if(sh)sh.qty=num(sh.qty)+t;else i.lots.push({id:uid("l"),lot:l.lot,qty:t,expiry:l.expiry||"",at:l.at,loc:"shelf"});moved.push(l.lot+"×"+fmt(t));}
-  i.lots=i.lots.filter(l=>num(l.qty)>0);i.updatedAt=Date.now();rec({itemId:i.id,name:i.name,code:i.code||"",delta:n-left,type:"move",lot:moved.join(", "),note:"Inventory → shelf"});return n-left;}
+  i.lots=i.lots.filter(l=>num(l.qty)>0);i.updatedAt=Date.now();rec({itemId:i.id,name:i.name,code:i.code||"",delta:n-left,type:"move",lot:moved.join(", "),note:"Fridge → shelf"});return n-left;}
 function consume(i,n,note,prefLot,pcs){let left=n;const taken=[];const fifo=lotsFIFO(i),order=[...fifo.filter(l=>l.loc==="shelf"),...fifo.filter(l=>l.loc!=="shelf")];if(prefLot){const k=order.findIndex(l=>l.lot===String(prefLot).trim());if(k>0)order.unshift(order.splice(k,1)[0]);}
   for(const l of order){if(left<=0)break;const t=Math.min(num(l.qty),left);l.qty=Math.round((num(l.qty)-t)*1e6)/1e6;left-=t;if(pcs&&l.pcs){l.pcs=Math.max(0,l.pcs-pcs);pcs=0;}taken.push(l.lot+"×"+fmt(t));}
   i.lots=(i.lots||[]).filter(l=>num(l.qty)>0);i.updatedAt=Date.now();rec({itemId:i.id,name:i.name,code:i.code||"",delta:-n,type:"use",lot:taken.join(", "),note:note||""});return taken;}
@@ -535,7 +538,15 @@ function render(){
   const rows=base.filter(i=>!q||[i.name,i.code,i.location,i.category,i.description,...(i.lots||[]).map(l=>l.lot)].join(" ").toLowerCase().includes(q));
   $("listTitle").textContent=filter==="All"?"All items":filter==="Attention"?"Needs attention":filter;$("listCount").textContent=rows.length+" of "+all.length;
   document.querySelectorAll("#mode button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.m===mode));$("catTools").hidden=mode!=="cat";$("catTools").style.display=mode==="cat"?"flex":"none";
-  if(mode==="cat"){if(filter==="All")$("listTitle").textContent="Product catalog";$("list").className="grid";
+  $("locTools").hidden=mode!=="loc";$("locTools").style.display=mode==="loc"?"flex":"none";
+  if(mode==="loc"){if(filter==="All")$("listTitle").textContent="Shelf & fridge";$("list").className="list";
+    const tS=rows.reduce((a,i)=>a+onShelf(i),0),tF=rows.reduce((a,i)=>a+qty(i)-onShelf(i),0);
+    $("list").innerHTML=!all.length?'<div class="empty"><b>No stock yet</b>Receive a delivery to see what is on the shelf and in the fridge.</div>':
+      `<div class="split2"><div><b class="mono">${fmt(tS)}</b><span>On shelf · ${rows.filter(i=>onShelf(i)>0).length} items</span></div><div><b class="mono">${fmt(tF)}</b><span>In fridge · ${rows.filter(i=>qty(i)-onShelf(i)>0).length} items</span></div></div>`+
+      rows.map(i=>{const sh=onShelf(i),fr=qty(i)-sh,fl=lotsFIFO(i).filter(l=>l.loc!=="shelf"),sl=lotsFIFO(i).filter(l=>l.loc==="shelf"),u=esc(i.unit||"units");
+        return `<button class="card" data-item="${esc(i.id)}" style="grid-template-columns:1fr auto auto;gap:4px 14px"><span class="nm" style="grid-row:auto">${esc(i.name)}</span><span class="q" style="grid-row:auto;grid-column:2"><b style="font-size:20px;color:var(--info)">${fmt(sh)}</b><span>shelf</span></span><span class="q" style="grid-row:auto;grid-column:3"><b style="font-size:20px">${fmt(fr)}</b><span>fridge</span></span>
+          <span class="meta" style="flex-direction:column;gap:4px;margin-top:6px">${sl.map(l=>`<span style="font-size:12px;color:var(--mute)"><span class="pill p-a">Shelf</span> lot <b class="mono">${esc(l.lot)}</b> · ${fmt(num(l.qty))} ${u}${l.expiry?" · exp "+esc(l.expiry):""}</span>`).join("")}${fl.map(l=>`<span style="font-size:12px;color:var(--mute)"><span class="pill">Fridge</span> lot <b class="mono">${esc(l.lot)}</b> · ${fmt(num(l.qty))} ${u}${l.pcs?" · "+l.pcs+" cs":""}${l.expiry?" · exp "+esc(l.expiry):""}</span>`).join("")}${!sl.length&&!fl.length?'<span class="pill p-out">Out of stock</span>':""}</span></button>`;}).join("");}
+  else if(mode==="cat"){if(filter==="All")$("listTitle").textContent="Product catalog";$("list").className="grid";
     $("list").innerHTML=!all.length?'<div class="empty" style="grid-column:1/-1"><b>No products yet</b>Tap New product to add your first one with a photo and price.</div>':rows.length?rows.map(pcard).join(""):'<div class="empty" style="grid-column:1/-1"><b>No matches</b>Try another search or filter.</div>';}
   else{$("list").className="list";$("list").innerHTML=!all.length?'<div class="empty"><b>Your stockroom is empty</b>Tap the scan button to add your first item.</div>':rows.length?rows.map(i=>card(i,cls[i.id])).join(""):'<div class="empty"><b>No matches</b>Try another search or filter.</div>';}
   hydrate($("list"));
@@ -580,7 +591,7 @@ function renderOrd(){
     B.innerHTML=`<div class="act" style="margin-bottom:12px"><label class="btn b-pri" for="invPhoto">Scan invoice</label><button class="btn b-sec" id="rcNew">Enter or paste</button></div><input id="invPhoto" type="file" accept="image/*" hidden>`+
       (rs.length?`<div class="list">${rs.map(r=>{const tot=r.lines.reduce((a,l)=>a+num(l.amount||num(l.qty)*num(l.price)),0);
         return `<button class="card" data-rc="${esc(r.id)}" style="grid-template-columns:1fr auto"><span class="nm" style="grid-row:auto">${esc(r.supplier||"Unknown supplier")}</span><span class="q" style="grid-column:2"><b style="font-size:18px">${money(num(r.total)||tot)}</b><span>${r.lines.length} line${r.lines.length===1?"":"s"}</span></span><span class="sub mono">Invoice ${esc(r.invoice||"–")} · ${r.date?new Date(r.date+"T00:00").toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}):""}</span><span class="meta">${r.status==="done"?'<span class="pill p-ok">Put away</span>':'<span class="pill p-low">To check</span>'}${r.source==="ai"?'<span class="pill p-info">Read by AI</span>':r.source==="ocr"?'<span class="pill p-info">Free reader</span>':""}</span></button>`;}).join("")}</div>`
-      :'<div class="empty"><b>No deliveries received yet</b>Scan a supplier invoice to fill in the items, quantities, lots and prices, then choose what goes to inventory and what goes on the shelf.</div>');
+      :'<div class="empty"><b>No deliveries received yet</b>Scan a supplier invoice to fill in the items, quantities, lots and prices, then choose what goes in the fridge and what goes on the shelf.</div>');
     $("rcNew").onclick=()=>newReceiptManual();$("invPhoto").addEventListener("change",invoicePhoto);return;}
   if(ordSeg==="po"){
     const ps=Object.values(D.pos).sort((a,b)=>b.createdAt-a.createdAt);
@@ -610,6 +621,8 @@ document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>setTab(b.dataset.tab)
 document.querySelectorAll("[data-attn]").forEach(b=>b.onclick=()=>{filter="Attention";render();});
 $("mode").onclick=e=>{const b=e.target.closest("button");if(b){mode=b.dataset.m;render();}};
 $("catAdd").onclick=()=>itemForm(null,"",true);
+$("locShare").onclick=async()=>{const txt="Stock count "+new Date().toLocaleString()+"\n\n"+items().map(i=>{const sh=onShelf(i);return `${i.name}: shelf ${fmt(sh)} · fridge ${fmt(qty(i)-sh)} ${i.unit||""}`+lotsFIFO(i).filter(l=>l.loc!=="shelf").map(l=>`\n   fridge lot ${l.lot}: ${fmt(num(l.qty))}${l.expiry?" (exp "+l.expiry+")":""}`).join("");}).join("\n");
+  try{if(navigator.share){await navigator.share({title:"Stock count",text:txt});return;}}catch(e){if(e&&e.name==="AbortError")return;}try{await navigator.clipboard.writeText(txt);toast("Stock count copied");}catch(e){toast("Sharing isn't available here");}};
 $("catShare").onclick=async()=>{const txt="Product list\n\n"+items().map(i=>`• ${i.name}${i.code?" ["+i.code+"]":""} — ${priceTxt(i)} — ${qty(i)>0?"available ("+fmt(qty(i))+" "+(i.unit||"units")+")":"out of stock"}`).join("\n");
   try{if(navigator.share){await navigator.share({title:"Product list",text:txt});return;}}catch(e){if(e&&e.name==="AbortError")return;}try{await navigator.clipboard.writeText(txt);toast("Product list copied");}catch(e){toast("Sharing isn't available here");}};
 $("chips").onclick=e=>{const b=e.target.closest(".chip");if(b){filter=b.dataset.f;render();}};
@@ -637,16 +650,16 @@ function openItem(id){
   <div class="recvbox"><span class="lbl">Batch details (used when receiving)</span><div class="g2"><input class="inp mono" id="rLot" placeholder="Lot no. (auto)"><input class="inp" id="rExp" type="date" aria-label="Expiry date"></div><input class="inp" id="note" placeholder="Note · PO, supplier, reason"></div>
   <div class="act"><button class="btn b-in" id="recv">＋ Receive</button><button class="btn b-out" id="use">− Use (FIFO)</button></div>
   <div class="act"><button class="btn b-sec" id="count">Set exact count</button><button class="btn b-sec" id="toShelf">Move to shelf →</button></div>
-  <div class="split2"><div><b class="mono">${fmt(qty(i)-onShelf(i))}</b><span>In inventory</span></div><div><b class="mono">${fmt(onShelf(i))}</b><span>On shelf</span></div></div>
+  <div class="split2"><div><b class="mono">${fmt(qty(i)-onShelf(i))}</b><span>In fridge</span></div><div><b class="mono">${fmt(onShelf(i))}</b><span>On shelf</span></div></div>
   <div class="panel" style="padding:6px 16px"><div class="sect" style="margin:8px 0 2px"><h2>Lots</h2><small>oldest expiry used first</small></div>
-    ${lots.length?lots.map((l,k)=>`<div class="lot"><b>${esc(l.lot)} <span class="pill ${l.loc==="shelf"?"p-a":""}" style="margin-left:4px">${l.loc==="shelf"?"Shelf":"Inventory"}</span>${k===0?' <span class="pill p-info" style="margin-left:4px">Next out</span>':""}</b><span>${l.expiry?"Expires "+new Date(l.expiry+"T00:00").toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}):"No expiry"} · received ${new Date(l.at).toLocaleDateString(undefined,{month:"short",day:"numeric"})}</span><span class="r"><b class="mono" style="font-size:16px">${fmt(num(l.qty))}</b>${l.pcs?`<br><span style="font-size:11px;color:var(--mute)">${l.pcs} case${l.pcs===1?"":"s"}</span>`:""}<br>${expPill(l.expiry)}</span></div>`).join(""):'<p style="color:var(--mute);margin:8px 0 12px">No stock on hand.</p>'}</div>
+    ${lots.length?lots.map((l,k)=>`<div class="lot"><b>${esc(l.lot)} <span class="pill ${l.loc==="shelf"?"p-a":""}" style="margin-left:4px">${l.loc==="shelf"?"Shelf":"Fridge"}</span>${k===0?' <span class="pill p-info" style="margin-left:4px">Next out</span>':""}</b><span>${l.expiry?"Expires "+new Date(l.expiry+"T00:00").toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}):"No expiry"} · received ${new Date(l.at).toLocaleDateString(undefined,{month:"short",day:"numeric"})}</span><span class="r"><b class="mono" style="font-size:16px">${fmt(num(l.qty))}</b>${l.pcs?`<br><span style="font-size:11px;color:var(--mute)">${l.pcs} case${l.pcs===1?"":"s"}</span>`:""}<br>${expPill(l.expiry)}</span></div>`).join(""):'<p style="color:var(--mute);margin:8px 0 12px">No stock on hand.</p>'}</div>
   ${hist.length?`<div class="panel" style="padding:6px 16px">${hist.map(m=>`<div class="mv"><span class="ic" style="background:${m.delta>=0?"#dcf5ea":"#ffe1e7"};color:${m.delta>=0?"var(--ok)":"var(--out)"}">${m.delta>=0?"↓":"↑"}</span><span class="t">${m.type==="receive"?"Received":m.type==="count"?"Count adjust":m.type==="move"?"Moved to shelf":"Used"}${m.lot?" · "+esc(m.lot):""}</span><span class="d ${m.delta>=0?"in":"out"}">${m.delta>=0?"+":"−"}${fmt(Math.abs(m.delta))}</span><span class="s">${m.note?esc(m.note)+" · ":""}${new Date(m.at).toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}</span></div>`).join("")}</div>`:""}
   <div class="act"><button class="btn b-sec" id="edit">Edit details</button><button class="btn b-dan" id="del">Delete</button></div><div id="cf"></div>`);
   hydrate($("sheetRoot"));const q=$("qty");$("mn").onclick=()=>q.value=Math.max(0,num(q.value)-1);$("pl").onclick=()=>q.value=num(q.value)+1;
   $("recv").onclick=()=>{const n=num(q.value);if(n<=0)return q.focus();receive(i,n,$("rLot").value,$("rExp").value,$("note").value.trim());save();render();closeSheet();toast("Received "+fmt(n)+" · now "+fmt(qty(i)));};
   $("use").onclick=()=>{const n=num(q.value);if(n<=0)return q.focus();if(n>qty(i)){toast("Only "+fmt(qty(i))+" on hand");return;}const tk=consume(i,n,$("note").value.trim());save();render();closeSheet();toast("Used "+fmt(n)+" from "+tk.join(", "));};
   $("count").onclick=()=>{setCount(i,num(q.value),$("note").value.trim());save();render();closeSheet();toast("Count set to "+fmt(qty(i)));};
-  $("toShelf").onclick=()=>{const n=num(q.value);if(n<=0)return q.focus();const inv=qty(i)-onShelf(i);if(inv<=0){toast("Nothing left in inventory to move");return;}const m=moveToShelf(i,Math.min(n,inv));save();render();closeSheet();toast("Moved "+fmt(m)+" "+(i.unit||"")+" to the shelf");};
+  $("toShelf").onclick=()=>{const n=num(q.value);if(n<=0)return q.focus();const inv=qty(i)-onShelf(i);if(inv<=0){toast("Nothing left in the fridge to move");return;}const m=moveToShelf(i,Math.min(n,inv));save();render();closeSheet();toast("Moved "+fmt(m)+" "+(i.unit||"")+" to the shelf");};
   $("edit").onclick=()=>itemForm(i);
   $("del").onclick=()=>{$("cf").innerHTML=`<div class="confirm"><span style="flex:1">Delete ${esc(i.name)} and its lots? History stays.</span><button class="btn sm b-out" id="yes">Delete</button><button class="btn sm b-sec" id="no">Keep</button></div>`;$("no").onclick=()=>$("cf").innerHTML="";$("yes").onclick=()=>{delete D.items[id];PH.del(id);save();render();closeSheet();toast("Deleted");};};
 }
@@ -683,6 +696,7 @@ function itemForm(ex,code,asProduct,pre){pre=pre||{};
   <label class="field">Location<input id="fLoc" value="${esc(i.location||"")}" placeholder="Shelf B2"></label>
   <label class="field">Shelf life (days)<input id="fShelf" type="number" inputmode="numeric" min="0" value="${esc(i.shelf||"")}" placeholder="for pack-dated labels"></label></div>
   <label class="field">Supplier<select id="fSup">${supOptions(i.supplierId)}</select></label>
+  <label class="field">Code in sales report (optional)<input id="fSalesCode" class="mono" value="${esc((i.salesCodes||[]).join(", "))}" placeholder="PLU / item no. used by your sales system"></label>
   <label class="field">Supplier's product no. (on invoices)<input id="fSupCode" class="mono" value="${esc(((i.supCodes||{})[nkey((D.suppliers[i.supplierId]||{}).name)])||"")}" placeholder="e.g. 807"></label>
   ${(i.alt||[]).length?`<div class="field">Other barcodes<div style="display:flex;gap:6px;flex-wrap:wrap" id="fAlt">${i.alt.map((a,k)=>`<span class="pill mono">${esc(a)} <button type="button" data-ra="${k}" aria-label="Remove" style="font-weight:800">✕</button></span>`).join("")}</div></div>`:""}
   ${/^2\d{6}$/.test(String(i.code||""))?`<label class="field">In-store barcode value<select id="fVm"><option value="weight" ${i.vmType!=="price"?"selected":""}>Weight (kg) is inside the barcode</option><option value="price" ${i.vmType==="price"?"selected":""}>Price is inside the barcode</option></select></label>`:""}
@@ -698,6 +712,7 @@ function itemForm(ex,code,asProduct,pre){pre=pre||{};
     const d={name,code:c,unit:$("fUnit").value.trim()||"units",category:$("fCat").value.trim(),reorder:num($("fRe").value),par:num($("fPar").value),cost:num($("fCost").value),price:num($("fPrice").value),description:$("fDesc").value.trim(),shelf:num($("fShelf").value),alt:altList,...($("fVm")?{vmType:$("fVm").value}:{}),location:$("fLoc").value.trim(),supplierId:$("fSup").value,updatedAt:Date.now()};
     let id;if(ex){id=ex.id;Object.assign(D.items[id],d);if(ex.example)D.items[id].example=false;toast("Saved");}
     else{id=uid("i");D.items[id]={...d,id,lots:[]};const q=num($("fQty").value);if(q>0)receive(D.items[id],q,$("fLot").value,$("fExp").value,"Starting stock",null,0,pre.pcs||0);toast("Added "+name);}
+    D.items[id].salesCodes=$("fSalesCode").value.split(/[,\s]+/).map(x=>x.trim()).filter(Boolean);
     {const sc=$("fSupCode").value.trim(),sn=nkey((D.suppliers[D.items[id].supplierId]||{}).name);if(sn){D.items[id].supCodes=D.items[id].supCodes||{};if(sc)D.items[id].supCodes[sn]=sc;else delete D.items[id].supCodes[sn];}}
     try{if(newPhoto){await PH.put(id,newPhoto);D.items[id].photo=true;}else if(dropPhoto){await PH.del(id);D.items[id].photo=false;}}catch(err){toast("Saved, but the photo couldn't be stored");}
     save();render();closeSheet();if(mode==="cat"||asProduct)openProduct(id);};
@@ -818,8 +833,8 @@ function openReceipt(id){const R=D.receipts[id];if(!R)return;const done=R.status
     <div class="g3"><label class="mini">Product no.<input data-f="code" class="mono" value="${esc(l.code)}" ${done?"disabled":""}></label><label class="mini">Lot<input data-f="lot" class="mono" value="${esc(l.lot)}" ${done?"disabled":""}></label><label class="mini">Expiry<input data-f="expiry" type="date" value="${esc(l.expiry||"")}" ${done?"disabled":""}></label></div>
     <div class="g3"><label class="mini">Quantity<input data-f="qty" type="number" inputmode="decimal" step="any" value="${l.qty}" ${done?"disabled":""}></label><label class="mini">Unit<select data-f="unit" ${done?"disabled":""}>${["kg","lb","units"].map(u=>`<option ${u===l.unit?"selected":""}>${u}</option>`).join("")}</select></label><label class="mini">Cases<input data-f="cases" type="number" inputmode="numeric" value="${l.cases||""}" ${done?"disabled":""}></label></div>
     <div class="g3"><label class="mini">Price / ${esc(l.unit)}<input data-f="price" type="number" inputmode="decimal" step="any" value="${l.price||""}" ${done?"disabled":""}></label><label class="mini" style="grid-column:span 2">Amount<input value="${money(num(l.amount)||num(l.qty)*num(l.price))}" disabled></label></div>
-    <div class="dest"><label class="mini">To inventory (${esc(l.unit)})<input data-f="inv" type="number" inputmode="decimal" step="any" value="${fmt(inv)}" ${done?"disabled":""}></label><label class="mini">To shelf (${esc(l.unit)})<input data-f="shelf" type="number" inputmode="decimal" step="any" value="${fmt(num(l.shelf))}" ${done?"disabled":""}></label>
-      ${done?"":`<div class="q"><button data-sp="inv" data-k="${k}">All inventory</button><button data-sp="shelf" data-k="${k}">All shelf</button><button data-sp="half" data-k="${k}">Half / half</button></div>`}</div></div>`;}).join("")}
+    <div class="dest"><label class="mini">To fridge (${esc(l.unit)})<input data-f="inv" type="number" inputmode="decimal" step="any" value="${fmt(inv)}" ${done?"disabled":""}></label><label class="mini">To shelf (${esc(l.unit)})<input data-f="shelf" type="number" inputmode="decimal" step="any" value="${fmt(num(l.shelf))}" ${done?"disabled":""}></label>
+      ${done?"":`<div class="q"><button data-sp="inv" data-k="${k}">All fridge</button><button data-sp="shelf" data-k="${k}">All shelf</button><button data-sp="half" data-k="${k}">Half / half</button></div>`}</div></div>`;}).join("")}
   ${done?"":'<button class="btn b-sec" id="rAdd">＋ Add a line</button>'}
   <div class="panel"><div class="kv"><span>Lines total</span><b class="mono">${money(sum)}</b>${num(R.total)?`<span>Invoice total</span><b class="mono">${money(num(R.total))}</b>`:""}<span>Weight / qty</span><b class="mono">${fmt(R.lines.reduce((a,l)=>a+num(l.qty),0))}</b><span>Cases</span><b class="mono">${fmt(R.lines.reduce((a,l)=>a+num(l.cases),0))}</b></div></div>
   ${num(R.total)&&diff>0.05?`<div class="warnbox">Lines add up to ${money(sum)} but the invoice total is ${money(num(R.total))}. A line may be missing or misread.</div>`:num(R.total)?'<div class="ok-box">Lines match the invoice total.</div>':""}
@@ -849,6 +864,68 @@ function openReceipt(id){const R=D.receipts[id];if(!R)return;const done=R.status
     R.status="done";R.doneAt=Date.now();save();render();closeSheet();toast("Put away "+nItems+" line"+(nItems===1?"":"s")+(nShelf?" · "+nShelf+" to shelf":""));};
   $("rDel").onclick=()=>{$("rcf").innerHTML=`<div class="confirm"><span style="flex:1">Delete this delivery record?${done?" Stock already put away stays.":""}</span><button class="btn sm b-out" id="yes">Delete</button><button class="btn sm b-sec" id="no">Keep</button></div>`;$("no").onclick=()=>$("rcf").innerHTML="";$("yes").onclick=()=>{delete D.receipts[id];save();render();closeSheet();toast("Delivery deleted");};};
 }
+/* ===================== SALES REPORT (PDF) ===================== */
+async function pdfLines(file){await loadScript("pdf/pdf.min.js");const lib=window.pdfjsLib;lib.GlobalWorkerOptions.workerSrc="pdf/pdf.worker.min.js";
+  const doc=await lib.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;const out=[];
+  for(let p=1;p<=doc.numPages;p++){const tc=await (await doc.getPage(p)).getTextContent();const rows=[];
+    for(const it of tc.items){if(!it.str||!it.str.trim())continue;const y=it.transform[5],x=it.transform[4];let r=rows.find(r=>Math.abs(r.y-y)<3);if(!r){r={y,parts:[]};rows.push(r);}r.parts.push({x,s:it.str.trim()});}
+    rows.sort((a,b)=>b.y-a.y);for(const r of rows){r.parts.sort((a,b)=>a.x-b.x);out.push(r.parts.map(q=>q.s).join(" ").replace(/\s+/g," ").trim());}}
+  return out;}
+const NUMRE=/^-?\$?\d{1,3}(?:[ ,]\d{3})*(?:[.,]\d+)?$|^-?\$?\d+(?:[.,]\d+)?$/;
+function salesNums(tokens){return tokens.map((t,k)=>({t,k})).filter(o=>{const c=o.t.replace(/(kg|lb|lbs|un|ea|x)$/i,"");return NUMRE.test(c)&&!/^\d{1,2}[:/]\d/.test(o.t);}).map(o=>({k:o.k,raw:o.t,v:numIn(o.t.replace(/[$a-z]/gi,""))}));}
+function salesMatch(text){const toks=text.split(" ");const nt=toks.map(normCode);let best=null;
+  for(const i of Object.values(D.items)){const codes=[i.code,...(i.alt||[]),...Object.values(i.supCodes||{}),...(i.salesCodes||[])].filter(Boolean).map(normCode).filter(c=>c.length>=2);
+    const ci=nt.findIndex(t=>codes.includes(t));if(ci>=0)return {item:i,codeTok:ci,how:"code"};
+    const T=" "+nkey(text)+" ";for(const n of [i.name,i.invName,...(i.salesNames||[])].filter(Boolean).map(nkey)){if(n.length>=4&&T.includes(" "+n+" ")&&(!best||n.length>best.len))best={item:i,codeTok:-1,how:"name",len:n.length};}}
+  return best;}
+function pickQty(nums,tpl){const v=nums.map(n=>n.v);
+  for(let a=0;a<v.length;a++)for(let b=0;b<v.length;b++)for(let c=0;c<v.length;c++){if(a===b||b===c||a===c)continue;const q=v[a],p=v[b],t=v[c];if(q>0&&p>0&&t>0&&Math.abs(q*p-t)<=Math.max(0.02,t*0.003)&&t>=q&&c>a&&c>b)return {q,idx:a,sure:true};}
+  if(tpl&&tpl.idx!=null&&nums.length>tpl.idx)return {q:v[tpl.idx],idx:tpl.idx,sure:false};
+  return nums.length?{q:v[0],idx:0,sure:false}:{q:0,idx:-1,sure:false};}
+async function ocrLines(file,P){await loadScript("ocr/tesseract.min.js");
+  if(!OCRW)OCRW=await Tesseract.createWorker("eng",1,{workerPath:"ocr/worker.min.js",corePath:"ocr/",langPath:"ocr/",gzip:true,workerBlobURL:false,
+    logger:m=>{if(m.status==="recognizing text")P("Reading text… "+Math.round(m.progress*100)+"%");else if(/load/.test(m.status))P("Loading the reader… "+Math.round((m.progress||0)*100)+"%");}});
+  await OCRW.setParameters({tessedit_pageseg_mode:"6",preserve_interword_spaces:"1"});
+  const url=URL.createObjectURL(file),img=new Image();img.src=url;await img.decode();const k=Math.min(2,3000/Math.max(img.naturalWidth,img.naturalHeight));
+  const c=document.createElement("canvas");c.width=Math.round(img.naturalWidth*k);c.height=Math.round(img.naturalHeight*k);const x=c.getContext("2d",{willReadFrequently:true});x.imageSmoothingQuality="high";x.drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);
+  const d=x.getImageData(0,0,c.width,c.height),A=d.data;for(let j=0;j<A.length;j+=4){const g=.3*A[j]+.59*A[j+1]+.11*A[j+2];A[j]=A[j+1]=A[j+2]=g;}x.putImageData(d,0,0);
+  const r=await OCRW.recognize(c);return r.data.text.split(/\n/).map(t=>t.replace(/[|\[\]{}“”"'‘’`~]/g," ").replace(/\s+/g," ").trim()).filter(Boolean);}
+async function salesImport(e){const f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;const isImg=/^image\//.test(f.type)||/\.(jpe?g|png|heic|heif)$/i.test(f.name);
+  sheet(`<div style="text-align:center;padding:26px 10px"><div class="st" style="font-size:20px">Reading sales report…</div><p style="color:var(--mute)" id="slP">${isImg?"Reading the photo on this phone":"Reading the PDF"}</p>${isImg?'<p style="color:var(--dim);font-size:12px">The first photo needs internet once to download the free reader (about 7 MB).</p>':""}</div>`);
+  const P=t=>{const el=$("slP");if(el)el.textContent=t;};
+  let lines;try{lines=isImg?await ocrLines(f,P):await pdfLines(f);}catch(err){closeSheet();scanMsg(isImg?"Couldn't read that photo. Lay the report flat, take it straight from above in good light, and try again.":"Couldn't open that PDF. Make sure it's the report exported from your POS.");return;}
+  if(!lines.length&&!isImg){try{P("This PDF is an image — reading it as a photo");}catch(_){}}
+  if(!lines.length){closeSheet();scanMsg(isImg?"No text found in that photo. Try a straighter, brighter photo.":"This PDF has no readable text. Take a photo of the printed report instead.");return;}
+  if(isImg)S_ocr=true;
+  const hash=f.name+"|"+f.size+"|"+lines.slice(0,8).join("|").slice(0,300);D.salesImports=D.salesImports||{};
+  const S={file:isImg?"Photo of report "+new Date().toLocaleDateString():f.name,hash,lines,manual:{},ocr:isImg};salesReview(S);}
+let S_ocr=false;
+function salesReview(S){const tpl=D.salesTpl||null;const rows=[],other=[];
+  S.lines.forEach((text,li)=>{const toks=text.split(" ");const m=salesMatch(text);let nums=salesNums(toks);
+    if(m){if(m.codeTok>=0)nums=nums.filter(n=>n.k!==m.codeTok);const pq=pickQty(nums,tpl);const q=S.manual[li]!=null?S.manual[li]:pq.q;rows.push({li,text,item:m.item,nums,q,sure:pq.sure||S.manual[li]!=null,idx:pq.idx});}
+    else if(nums.length&&/[A-Za-z]{3,}/.test(text)&&!/\b(total|subtotal|sous-total|tax|tps|tvq|gst|pst|page|date|report|rapport|period)\b/i.test(text))other.push({li,text});});
+  const prev=D.salesImports[S.hash];const first=rows.find(r=>r.nums.length>1);
+  const after=r=>{const sh=onShelf(r.item),fr=qty(r.item)-sh,take=Math.min(r.q,sh+fr),fromSh=Math.min(take,sh),fromFr=take-fromSh;return {sh,fr,fromSh,fromFr,short:r.q-take};};
+  sheet(`<h3 class="st">Deduct sales</h3><p style="margin:-6px 0 0;color:var(--mute)">${esc(S.file)} · ${S.lines.length} lines read · ${rows.length} matched to your items</p>
+  ${S.ocr?'<div class="warnbox">Read from a photo: check each quantity against the printed report before deducting.</div>':""}
+  ${prev?`<div class="warnbox">This report was already deducted on ${new Date(prev.at).toLocaleString()}. Deducting it again would remove the stock twice.</div>`:""}
+  ${first?`<div class="recvbox"><span class="lbl">Which number is the quantity sold? (tap it once — the app remembers)</span><div class="mono" style="font-size:12px;color:var(--mute);word-break:break-word">${esc(first.text)}</div><div style="display:flex;gap:6px;flex-wrap:wrap">${first.nums.map((n,k)=>`<button class="chip" data-qi="${k}" aria-pressed="${k===first.idx}">${esc(n.raw)}</button>`).join("")}</div></div>`:""}
+  <div class="list">${rows.map((r,k)=>{const a=after(r),u=esc(r.item.unit||"");return `<div class="rline"><div class="rh"><div><b>${esc(r.item.name)}</b>${r.sure?"":' <span class="pill p-low">Check</span>'}<br><small>${esc(r.text)}</small></div></div>
+    <div class="g2"><label class="mini">Sold (${u})<input data-sq="${r.li}" type="number" inputmode="decimal" step="any" value="${fmt(r.q)}"></label><div class="mini">After deducting<span style="font-size:13px;color:var(--ink);font-weight:600;padding-top:6px">Shelf ${fmt(a.sh)} → ${fmt(a.sh-a.fromSh)} · Fridge ${fmt(a.fr)} → ${fmt(a.fr-a.fromFr)}</span></div></div>
+    ${a.short>0.0001?`<div class="warnbox">Only ${fmt(r.q-a.short)} ${u} on hand — ${fmt(a.short)} ${u} more was sold than the app has. Check your counts.</div>`:""}</div>`;}).join("")||'<div class="empty"><b>No lines matched your items yet</b>Link the report lines below to your items. The app remembers each link.</div>'}</div>
+  ${other.length?`<div class="sect"><h2>Not matched</h2><small>${other.length} lines</small></div><div class="panel" style="padding:4px 14px">${other.slice(0,60).map(o=>`<div style="padding:10px 0;border-top:1px solid var(--line)"><div class="mono" style="font-size:12px;word-break:break-word">${esc(o.text)}</div><select class="inp" data-ln="${o.li}" style="margin-top:6px;height:40px"><option value="">Link to an item…</option>${items().map(i=>`<option value="${esc(i.id)}">${esc(i.name)}</option>`).join("")}</select></div>`).join("")}</div>`:""}
+  <button class="btn b-out" id="slGo" ${rows.length?"":"disabled"}>Deduct ${rows.length} item${rows.length===1?"":"s"} from stock</button><button class="btn b-sec" id="slX">Cancel</button>`);
+  $("slX").onclick=closeSheet;
+  document.querySelectorAll("[data-qi]").forEach(b=>b.onclick=()=>{D.salesTpl={idx:+b.dataset.qi};save();S.manual={};salesReview(S);});
+  document.querySelectorAll("[data-sq]").forEach(inp=>inp.addEventListener("change",()=>{S.manual[+inp.dataset.sq]=num(inp.value);salesReview(S);}));
+  document.querySelectorAll("[data-ln]").forEach(sel=>sel.addEventListener("change",()=>{const it=D.items[sel.value];if(!it)return;const text=S.lines[+sel.dataset.ln];
+    const toks=text.split(" ");const code=toks.find(t=>/^[A-Z0-9-]{2,14}$/i.test(t)&&/\d/.test(t)&&!NUMRE.test(t.replace(/kg$/i,"")))||(NUMRE.test(toks[0])&&/^\d{2,8}$/.test(toks[0])&&toks.length>2?toks[0]:"");
+    const name=toks.filter(t=>/[A-Za-z]{2,}/.test(t)&&!/^(kg|lb|lbs|ea|un)$/i.test(t)).join(" ");
+    if(code){it.salesCodes=it.salesCodes||[];if(!it.salesCodes.includes(code))it.salesCodes.push(code);}else if(name){it.salesNames=it.salesNames||[];if(!it.salesNames.includes(name))it.salesNames.push(name);}
+    save();toast("Linked to "+it.name);salesReview(S);}));
+  $("slGo").onclick=()=>{let n=0,short=[];for(const r of rows){if(!(r.q>0))continue;const avail=qty(r.item),take=Math.min(r.q,avail);if(take>0){consume(r.item,take,"Sales report · "+S.file);n++;}if(r.q-take>0.0001)short.push(r.item.name+" ("+fmt(r.q-take)+" "+(r.item.unit||"")+")");}
+    D.salesImports[S.hash]={at:Date.now(),file:S.file,items:n};save();render();
+    sheet(`<h3 class="st">Sales deducted</h3><div class="ok-box">${n} item${n===1?"":"s"} updated. Sold stock was taken from the shelf first, then the fridge.</div>${short.length?`<div class="warnbox">More was sold than the app had for: ${esc(short.join(", "))}. Do a quick count of these and use Set exact count.</div>`:""}<button class="btn b-pri" id="slDone">Done</button>`);$("slDone").onclick=closeSheet;};}
 function newPO(sid,lines){const id=uid("p"),d=new Date(),n=Object.values(D.pos).filter(p=>new Date(p.createdAt).toDateString()===d.toDateString()).length+1;
   D.pos[id]={id,number:"PO-"+d.toISOString().slice(2,10).replace(/-/g,"")+"-"+String(n).padStart(2,"0"),supplierId:sid||"",status:"draft",lines,createdAt:Date.now(),note:""};save();return id;}
 function poText(p){const s=D.suppliers[p.supplierId],tot=p.lines.reduce((a,l)=>a+num(l.qty)*num(l.cost),0);
@@ -1035,7 +1112,7 @@ async function photoScan(e){const f=e.target.files&&e.target.files[0];e.target.v
     URL.revokeObjectURL(url);const r=best(cands.filter(c=>scoreText(c.text)>0));
     if(r)handleCode(r.text,r.fmt);else scanMsg("Couldn't read a barcode in that photo. Take it from about 30 cm with the barcode filling most of the width, keep it sharp and straight — or copy the numbers under the barcode with Live Text and use More › Type or paste a barcode.");
   }catch(err){scanMsg("Couldn't open that photo. Try again or type the code.");}}
-$("cam").addEventListener("change",photoScan);$("cam2").addEventListener("change",photoScan);
+$("cam").addEventListener("change",photoScan);$("salesPdf").addEventListener("change",salesImport);$("salesPdf2").addEventListener("change",salesImport);$("cam2").addEventListener("change",photoScan);
 let stream=null,scanning=false,timer=null,misses=0,lastRead="",lastAt=0;
 function stopLive(){$("zoomBar").hidden=true;$("hint2").hidden=true;scanning=false;clearTimeout(timer);try{stream&&stream.getTracks().forEach(t=>t.stop());}catch(e){}stream=null;$("vid").srcObject=null;$("live").hidden=true;$("torch").hidden=true;}
 $("liveClose").onclick=stopLive;
@@ -1082,7 +1159,7 @@ async function shareFile(name,type,data){const file=new File([data],name,{type})
 const cell=v=>{const s=String(v??"");return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;};
 $("exportBtn").onclick=()=>{const {cls}=abcClass();
   let csv="\ufeffName,Code,Category,Supplier,Selling price,Description,Quantity,Unit,Reorder at,Order up to,Status,ABC,Cost per unit,Stock value,Avg use per day,Days left,Location,Next expiry\n"+items().map(i=>{const dl=daysLeft(i);return [i.name,i.code,i.category,supplierOf(i)?.name||"",num(i.price)||"",i.description||"",qty(i),i.unit,num(i.reorder)||"",num(i.par)||"",status(i).toUpperCase(),cls[i.id],num(i.cost)||"",num(i.cost)?value(i).toFixed(2):"",fmt(avgDaily(i.id)),dl===Infinity?"":Math.round(dl),i.location,nearestExp(i)].map(cell).join(",");}).join("\n");
-  csv+="\n\nLots\nItem,Lot,Location,Quantity,Expiry,Received\n"+items().flatMap(i=>lotsFIFO(i).map(l=>[i.name,l.lot,l.loc==="shelf"?"Shelf":"Inventory",l.qty,l.expiry,new Date(l.at).toLocaleDateString()].map(cell).join(","))).join("\n");
+  csv+="\n\nLots\nItem,Lot,Location,Quantity,Expiry,Received\n"+items().flatMap(i=>lotsFIFO(i).map(l=>[i.name,l.lot,l.loc==="shelf"?"Shelf":"Fridge",l.qty,l.expiry,new Date(l.at).toLocaleDateString()].map(cell).join(","))).join("\n");
   csv+="\n\nHistory\nWhen,Item,Code,Change,Type,Lot,Note\n"+D.moves.map(m=>[new Date(m.at).toLocaleString(),m.name,m.code,m.delta,m.type,m.lot,m.note].map(cell).join(",")).join("\n");
   shareFile("stock-"+new Date().toISOString().slice(0,10)+".csv","text/csv",csv);};
 $("backupBtn").onclick=async()=>{const photos={};for(const i of items())if(i.photo){const b=await PH.blob(i.id);if(b)photos[i.id]=await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(b);});}
