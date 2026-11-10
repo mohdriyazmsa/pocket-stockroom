@@ -967,20 +967,26 @@ function pickQty(nums,tpl){const v=nums.map(n=>n.v);
   if(tpl&&tpl.idx!=null&&nums.length>tpl.idx)return {q:v[tpl.idx],idx:tpl.idx,sure:false};
   return nums.length?{q:v[0],idx:0,sure:false}:{q:0,idx:-1,sure:false};}
 /* local-contrast clean-up for faint printed reports: gaussian-ish adaptive threshold (3 box blurs) */
-function binarize(x,W,H,rad,C){const d=x.getImageData(0,0,W,H),A=d.data,g=new Float32Array(W*H);for(let j=0,p=0;p<W*H;p++,j+=4)g[p]=.3*A[j]+.59*A[j+1]+.11*A[j+2];
-  let b=g.slice(),t=new Float32Array(W*H);const box=(src,dst,horiz)=>{const n=horiz?W:H,m=horiz?H:W,st=horiz?1:W,ln=horiz?W:1,w=2*rad+1;
+function binarize(x,W,H,rad,C){const d=x.getImageData(0,0,W,H),A=d.data,g=new Uint8Array(W*H);for(let j=0,p=0;p<W*H;p++,j+=4)g[p]=.3*A[j]+.59*A[j+1]+.11*A[j+2];
+  let b=g.slice(),t=new Uint8Array(W*H);const box=(src,dst,horiz)=>{const n=horiz?W:H,m=horiz?H:W,st=horiz?1:W,ln=horiz?W:1,w=2*rad+1;
     for(let r=0;r<m;r++){const o=r*ln;let acc=0;for(let k=-rad;k<=rad;k++)acc+=src[o+Math.min(n-1,Math.max(0,k))*st];
-      for(let k=0;k<n;k++){dst[o+k*st]=acc/w;const a=Math.min(n-1,k+rad+1),z=Math.max(0,k-rad);acc+=src[o+a*st]-src[o+z*st];}}};
+      for(let k=0;k<n;k++){dst[o+k*st]=acc/w+.5;const a=Math.min(n-1,k+rad+1),z=Math.max(0,k-rad);acc+=src[o+a*st]-src[o+z*st];}}};
   for(let k=0;k<3;k++){box(b,t,true);box(t,b,false);}
-  for(let j=0,p=0;p<W*H;p++,j+=4){const v=g[p]>b[p]-C?255:0;A[j]=A[j+1]=A[j+2]=v;}x.putImageData(d,0,0);}
+  for(let j=0,p=0;p<W*H;p++,j+=4){const v=g[p]>b[p]-C?255:0;A[j]=A[j+1]=A[j+2]=v;}x.putImageData(d,0,0);
+  /* straighten: find the tilt that makes text rows line up best (−5°…5°) */
+  const sw=Math.min(900,W),f=W/sw,sh=Math.round(H/f),dk=new Uint8Array(sw*sh);for(let y=0;y<sh;y++)for(let X=0;X<sw;X++){const q=((Math.floor(y*f)*W+Math.floor(X*f))*4);dk[y*sw+X]=A[q]<128?1:0;}
+  let best=0,bv=-1;for(let a=-5;a<=5.001;a+=0.25){const tn=Math.tan(a*Math.PI/180),rows=new Float64Array(sh+sw);for(let y=0;y<sh;y++)for(let X=0;X<sw;X++)if(dk[y*sw+X]){const yy=Math.round(y-X*tn+sw*0.1);if(yy>=0&&yy<rows.length)rows[yy]++;}
+    let m=0,v=0;for(const r of rows)m+=r;m/=rows.length;for(const r of rows)v+=(r-m)*(r-m);if(v>bv){bv=v;best=a;}}
+  return best;}
+function rotateCanvas(c,deg){if(Math.abs(deg)<0.2)return c;const r=deg*Math.PI/180,o=document.createElement("canvas");o.width=c.width;o.height=c.height;const x=o.getContext("2d",{willReadFrequently:true});x.fillStyle="#fff";x.fillRect(0,0,o.width,o.height);x.translate(o.width/2,o.height/2);x.rotate(-r);x.drawImage(c,-c.width/2,-c.height/2);return o;}
 async function ocrLines(file,P,opt){opt=opt||{};await loadScript("ocr/tesseract.min.js");
   if(!OCRW)OCRW=await Tesseract.createWorker("eng",1,{workerPath:"ocr/worker.min.js",corePath:"ocr/",langPath:"ocr/",gzip:true,workerBlobURL:false,
     logger:m=>{if(m.status==="recognizing text")P("Reading text… "+Math.round(m.progress*100)+"%");else if(/load/.test(m.status))P("Loading the reader… "+Math.round((m.progress||0)*100)+"%");}});
   await OCRW.setParameters({tessedit_pageseg_mode:opt.psm||"6",preserve_interword_spaces:"1"});
-  const url=URL.createObjectURL(file),img=new Image();img.src=url;await img.decode();const k=opt.bin?Math.max(1,Math.min(2.5,2250/Math.min(img.naturalWidth,img.naturalHeight))):Math.min(2,3000/Math.max(img.naturalWidth,img.naturalHeight));
+  const url=URL.createObjectURL(file),img=new Image();img.src=url;await img.decode();const k=opt.bin?Math.min(2.5,2250/Math.min(img.naturalWidth,img.naturalHeight),3400/Math.max(img.naturalWidth,img.naturalHeight)*1.2,Math.max(1,2250/Math.min(img.naturalWidth,img.naturalHeight))):Math.min(2,3000/Math.max(img.naturalWidth,img.naturalHeight));
   const c=document.createElement("canvas");c.width=Math.round(img.naturalWidth*k);c.height=Math.round(img.naturalHeight*k);const x=c.getContext("2d",{willReadFrequently:true});x.imageSmoothingQuality="high";x.drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);
-  const d=x.getImageData(0,0,c.width,c.height),A=d.data;for(let j=0;j<A.length;j+=4){const g=.3*A[j]+.59*A[j+1]+.11*A[j+2];A[j]=A[j+1]=A[j+2]=g;}x.putImageData(d,0,0);if(opt.bin){P("Cleaning up the photo…");await new Promise(r=>setTimeout(r,30));binarize(x,c.width,c.height,Math.round(14*c.width/2250),20);}
-  const r=await OCRW.recognize(c);return r.data.text.split(/\n/).map(t=>t.replace(/[|\[\]{}“”"'‘’`~]/g," ").replace(/\s+/g," ").trim()).filter(Boolean);}
+  const d=x.getImageData(0,0,c.width,c.height),A=d.data;for(let j=0;j<A.length;j+=4){const g=.3*A[j]+.59*A[j+1]+.11*A[j+2];A[j]=A[j+1]=A[j+2]=g;}x.putImageData(d,0,0);let cc=c;if(opt.bin){P("Cleaning up the photo…");await new Promise(r=>setTimeout(r,30));const tilt=binarize(x,c.width,c.height,Math.max(6,Math.round(14*Math.min(c.width,c.height)/2250)),20);window.__tilt=tilt;}
+  const r=await OCRW.recognize(cc);return r.data.text.split(/\n/).map(t=>t.replace(/[|\[\]{}“”"'‘’`~]/g," ").replace(/\s+/g," ").trim()).filter(Boolean);}
 async function salesImport(e){const f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;const isImg=/^image\//.test(f.type)||/\.(jpe?g|png|heic|heif)$/i.test(f.name);
   sheet(`<div style="text-align:center;padding:26px 10px"><div class="st" style="font-size:20px">Reading sales report…</div><p style="color:var(--mute)" id="slP">${isImg?"Reading the photo on this phone":"Reading the PDF"}</p>${isImg?'<p style="color:var(--dim);font-size:12px">The first photo needs internet once to download the free reader (about 7 MB).</p>':""}</div>`);
   const P=t=>{const el=$("slP");if(el)el.textContent=t;};
