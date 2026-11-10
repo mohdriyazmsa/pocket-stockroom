@@ -368,7 +368,7 @@ html[data-look="bold"] .tab[aria-current="page"] svg{color:#ff3d7f!important}
     <button class="row" id="clearEx"><span class="ri" style="background:#ffe1e7;color:var(--out)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></span><div>Remove example data<small>Delete the sample items, suppliers and orders</small></div></button>
   </div>
   <div id="moreCf"></div>
-  <p style="color:var(--dim);font-size:12px;margin:14px 4px">Everything is saved on this iPhone only. Back up regularly.<br>App version 2026.11.09-h</p>
+  <p style="color:var(--dim);font-size:12px;margin:14px 4px">Everything is saved on this iPhone only. Back up regularly.<br>App version 2026.11.09-i</p>
 </section>
 </main>
 
@@ -695,7 +695,7 @@ function itemForm(ex,code,asProduct,pre){pre=pre||{};
   <label class="field">Description<textarea id="fDesc" placeholder="Size, brand, features, notes for customers">${esc(i.description||"")}</textarea></label>
   <label class="field">Barcode / code<input id="fCode" class="mono" value="${esc(i.code||"")}" placeholder="Scan or type"></label>
   ${ex?"":`<div class="g2"><label class="field">Starting qty<input id="fQty" type="number" inputmode="decimal" step="any" min="0" value="${pre.qty!=null?pre.qty:asProduct?0:1}"></label><label class="field">Lot no.<input id="fLot" class="mono" placeholder="auto" value="${esc(pre.lot||"")}"></label></div><label class="field">Expiry date (this lot)<input id="fExp" type="date" value="${esc(pre.exp||"")}"></label>`}
-  <div class="g2"><label class="field">Unit<input id="fUnit" value="${esc(i.unit||"units")}" placeholder="units, kg, boxes"></label>
+  <div class="g2"><label class="field">Counted in<input id="fUnit" list="unitList" value="${esc(i.unit||"units")}" placeholder="packs, units, kg, lb"><datalist id="unitList"><option value="packs"><option value="units"><option value="cases"><option value="kg"><option value="lb"></datalist></label>
   <label class="field">Category<input id="fCat" list="catlist" value="${esc(i.category||"")}" placeholder="e.g. Pantry"><datalist id="catlist">${cats.map(c=>`<option value="${esc(c)}">`).join("")}</datalist></label>
   <label class="field">Reorder at<input id="fRe" type="number" inputmode="decimal" step="any" min="0" value="${esc(i.reorder||"")}" placeholder="0 = off"></label>
   <label class="field">Order up to<input id="fPar" type="number" inputmode="decimal" step="any" min="0" value="${esc(i.par||"")}" placeholder="par level"></label>
@@ -744,10 +744,15 @@ const titleCase=s=>String(s||"").toLowerCase().replace(/\b([a-z])/g,c=>c.toUpper
 function numIn(v){if(typeof v==="number")return v;const t=String(v||"").replace(/\s/g,"");if(!t)return 0;const c=t.lastIndexOf(","),d=t.lastIndexOf(".");let x=t;
   if(c>d&&t.length-c===3&&d<0)x=t.replace(/\./g,"").replace(",",".");else x=t.replace(/,/g,"");const n=parseFloat(x);return isFinite(n)?n:0;}
 function matchItem(line,supplier){const sk=nkey(supplier),code=String(line.code||"").trim();
-  if(code){const hit=Object.values(D.items).find(i=>(i.supCodes||{})[sk]===code);if(hit)return hit.id;}
+  if(code){const hit=Object.values(D.items).find(i=>(i.supCodes||{})[sk]===code);if(hit)return hit.id;
+    const any=Object.values(D.items).filter(i=>Object.values(i.supCodes||{}).includes(code));if(any.length===1)return any[0].id;}
   const dn=nkey(line.desc);if(!dn)return "";const exact=Object.values(D.items).find(i=>nkey(i.name)===dn||nkey(i.invName)===dn);if(exact)return exact.id;
   const words=dn.split(" ").filter(w=>w.length>2);let bestId="",bestS=0;for(const i of Object.values(D.items)){const iw=nkey(i.name+" "+(i.invName||"")).split(" ");const hitN=words.filter(w=>iw.includes(w)).length;const sc=words.length?hitN/words.length:0;if(sc>bestS){bestS=sc;bestId=i.id;}}
   return bestS>=0.75?bestId:"";}
+function casePer(i){const m=Object.values(i.cmeta||{}).find(x=>x.name==="Case"&&num(x.per)>0);return m?num(m.per):0;}
+function lineItem(L){return (L.itemId&&D.items[L.itemId])||{unit:L.newUnit||L.unit,cmeta:{}};}
+function lineConv(L){const it=lineItem(L);return !isW(it.unit)&&!!isW(L.unit);}
+function lineSQ(L){if(!lineConv(L))return num(L.qty);if(L.stockQty!=null&&L.stockQty!=="")return num(L.stockQty);const cp=casePer(lineItem(L));return Math.round(num(L.cases)*(cp||1)*1000)/1000;}
 function newReceipt(data,source){const id=uid("r");const sup=data.supplier||"";
   D.receipts=D.receipts||{};D.receipts[id]={id,source:source||"manual",status:"draft",createdAt:Date.now(),supplier:sup,invoice:data.invoice||"",date:data.date||new Date().toISOString().slice(0,10),ref:data.ref||"",total:num(data.total),
     lines:(data.lines||[]).map(l=>{const L={id:uid("x"),code:String(l.code||""),lot:String(l.lot||""),desc:String(l.desc||""),cases:num(l.cases),qty:num(l.qty),unit:(l.unit||"").toLowerCase()||"units",price:num(l.price),amount:num(l.amount),expiry:"",shelf:0,check:!!l.check};L.itemId=matchItem(L,sup);return L;})};
@@ -834,13 +839,14 @@ function openReceipt(id){const R=D.receipts[id];if(!R)return;const done=R.status
   ${!done&&R.source==="ai"?'<div class="warnbox">Check every line against the paper invoice before putting it away. Fix anything that was misread.</div>':""}${!done&&R.source==="ocr"?`<div class="warnbox">Read by the free reader. It gets product numbers, lots and names well, but numbers can be misread. Lines marked “Check” didn’t add up (quantity × price ≠ amount) — fix them from the paper invoice.</div>`:""}
   <div class="g2"><label class="field">Supplier<input id="rSup" value="${esc(R.supplier)}" ${done?"disabled":""}></label><label class="field">Invoice no.<input id="rInv" class="mono" value="${esc(R.invoice)}" ${done?"disabled":""}></label>
   <label class="field">Date<input id="rDate" type="date" value="${esc(R.date)}" ${done?"disabled":""}></label><label class="field">PO / reference<input id="rRef" value="${esc(R.ref)}" ${done?"disabled":""}></label></div>
-  ${R.lines.map((l,k)=>{const inv=Math.max(0,num(l.qty)-num(l.shelf));return `<div class="rline" data-k="${k}">
+  ${R.lines.map((l,k)=>{const LI=lineItem(l),conv=lineConv(l),SQ=lineSQ(l),su=conv?LI.unit:l.unit,cp=casePer(LI),inv=Math.max(0,SQ-num(l.shelf));return `<div class="rline" data-k="${k}">
     <div class="rh"><div><b>${esc(l.desc||"New line")}</b>${l.check&&!done?' <span class="pill p-low">Check</span>':""}<br><small>${esc(l.code||"no product no.")}</small></div>${done?"":`<button class="btn sm b-dan" data-del="${k}" aria-label="Remove line">✕</button>`}</div>
-    ${done?"":`<label class="mini">Description<input data-f="desc" value="${esc(l.desc)}"></label><label class="mini">Goes into stock as<select data-f="itemId">${opt(l.itemId)}</select></label>`}
+    ${done?"":`<label class="mini">Description<input data-f="desc" value="${esc(l.desc)}"></label><label class="mini">Goes into stock as<select data-f="itemId">${opt(l.itemId)}</select></label>${l.itemId?"":`<label class="mini">New item is counted in<select data-f="newUnit">${["kg","lb","packs","units","cases"].map(u=>`<option ${u===(l.newUnit||l.unit)?"selected":""}>${u}</option>`).join("")}</select></label>`}`}
     <div class="g3"><label class="mini">Product no.<input data-f="code" class="mono" value="${esc(l.code)}" ${done?"disabled":""}></label><label class="mini">Lot<input data-f="lot" class="mono" value="${esc(l.lot)}" ${done?"disabled":""}></label><label class="mini">Expiry<input data-f="expiry" type="date" value="${esc(l.expiry||"")}" ${done?"disabled":""}></label></div>
     <div class="g3"><label class="mini">Quantity<input data-f="qty" type="number" inputmode="decimal" step="any" value="${l.qty}" ${done?"disabled":""}></label><label class="mini">Unit<select data-f="unit" ${done?"disabled":""}>${["kg","lb","units"].map(u=>`<option ${u===l.unit?"selected":""}>${u}</option>`).join("")}</select></label><label class="mini">Cases<input data-f="cases" type="number" inputmode="numeric" value="${l.cases||""}" ${done?"disabled":""}></label></div>
     <div class="g3"><label class="mini">Price / ${esc(l.unit)}<input data-f="price" type="number" inputmode="decimal" step="any" value="${l.price||""}" ${done?"disabled":""}></label><label class="mini" style="grid-column:span 2">Amount<input value="${money(num(l.amount)||num(l.qty)*num(l.price))}" disabled></label></div>
-    <div class="dest"><label class="mini">To fridge (${esc(l.unit)})<input data-f="inv" type="number" inputmode="decimal" step="any" value="${fmt(inv)}" ${done?"disabled":""}></label><label class="mini">To shelf (${esc(l.unit)})<input data-f="shelf" type="number" inputmode="decimal" step="any" value="${fmt(num(l.shelf))}" ${done?"disabled":""}></label>
+    ${conv?`<div class="recvbox" style="padding:10px"><label class="mini">Into stock (${esc(su)}) — billed by ${esc(l.unit)}, counted in ${esc(su)}<input data-f="stockQty" type="number" inputmode="decimal" step="any" value="${fmt(SQ)}" ${done?"disabled":""}></label><span style="font-size:12px;color:var(--mute)">${cp?`${fmt(num(l.cases))} cases × ${fmt(cp)} ${esc(su)} per case`:`No "${esc(su)} per case" saved yet — type the total, or set it on the product's case barcode.`}${SQ>0&&num(l.amount)?` · cost ${money(num(l.amount)/SQ)} per ${esc(su.replace(/s$/,""))}`:""}</span></div>`:""}
+    <div class="dest"><label class="mini">To fridge (${esc(su)})<input data-f="inv" type="number" inputmode="decimal" step="any" value="${fmt(inv)}" ${done?"disabled":""}></label><label class="mini">To shelf (${esc(su)})<input data-f="shelf" type="number" inputmode="decimal" step="any" value="${fmt(num(l.shelf))}" ${done?"disabled":""}></label>
       ${done?"":`<div class="q"><button data-sp="inv" data-k="${k}">All fridge</button><button data-sp="shelf" data-k="${k}">All shelf</button><button data-sp="half" data-k="${k}">Half / half</button></div>`}</div></div>`;}).join("")}
   ${done?"":'<button class="btn b-sec" id="rAdd">＋ Add a line</button>'}
   <div class="panel"><div class="kv"><span>Lines total</span><b class="mono">${money(sum)}</b>${num(R.total)?`<span>Invoice total</span><b class="mono">${money(num(R.total))}</b>`:""}<span>Weight / qty</span><b class="mono">${fmt(R.lines.reduce((a,l)=>a+num(l.qty),0))}</b><span>Cases</span><b class="mono">${fmt(R.lines.reduce((a,l)=>a+num(l.cases),0))}</b></div></div>
@@ -851,22 +857,24 @@ function openReceipt(id){const R=D.receipts[id];if(!R)return;const done=R.status
   const hdr=()=>{if(done)return;R.supplier=$("rSup").value.trim();R.invoice=$("rInv").value.trim();R.date=$("rDate").value;R.ref=$("rRef").value.trim();save();};
   ["rSup","rInv","rDate","rRef"].forEach(x=>$(x).addEventListener("change",hdr));
   S.querySelectorAll(".rline [data-f]").forEach(inp=>inp.addEventListener("change",()=>{const k=+inp.closest(".rline").dataset.k,L=R.lines[k],f=inp.dataset.f,v=inp.value;
-    if(f==="inv"){L.shelf=Math.max(0,num(L.qty)-num(v));}else if(f==="shelf"){L.shelf=Math.min(num(L.qty),Math.max(0,num(v)));}
-    else if(["qty","price","cases"].includes(f)){L[f]=num(v);L.amount=Math.round(num(L.qty)*num(L.price)*100)/100;if(f==="qty")L.shelf=Math.min(num(L.shelf),num(L.qty));}
+    if(f==="inv"){L.shelf=Math.max(0,lineSQ(L)-num(v));}else if(f==="shelf"){L.shelf=Math.min(lineSQ(L),Math.max(0,num(v)));}else if(f==="stockQty"){L.stockQty=num(v);L.shelf=Math.min(num(L.shelf),num(v));}
+    else if(f==="itemId"||f==="newUnit"){L[f]=v;L.stockQty=null;L.shelf=0;}
+    else if(["qty","price","cases"].includes(f)){if(f==="cases")L.stockQty=null;L[f]=num(v);L.amount=Math.round(num(L.qty)*num(L.price)*100)/100;if(f==="qty")L.shelf=Math.min(num(L.shelf),lineSQ(L));}
     else L[f]=v;if(["qty","price"].includes(f))L.check=false;if(f==="code"||f==="desc"){if(!L.itemId)L.itemId=matchItem(L,R.supplier);}
     save();hdr();openReceipt(id);}));
-  S.querySelectorAll("[data-sp]").forEach(b=>b.onclick=()=>{const L=R.lines[+b.dataset.k];L.shelf=b.dataset.sp==="inv"?0:b.dataset.sp==="shelf"?num(L.qty):Math.round(num(L.qty)/2*1000)/1000;save();hdr();openReceipt(id);});
+  S.querySelectorAll("[data-sp]").forEach(b=>b.onclick=()=>{const L=R.lines[+b.dataset.k];const SQ=lineSQ(L);L.shelf=b.dataset.sp==="inv"?0:b.dataset.sp==="shelf"?SQ:(isW(lineItem(L).unit)?Math.round(SQ/2*1000)/1000:Math.floor(SQ/2));save();hdr();openReceipt(id);});
   S.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{R.lines.splice(+b.dataset.del,1);save();hdr();openReceipt(id);});
   if($("rAdd"))$("rAdd").onclick=()=>{hdr();R.lines.push({id:uid("x"),code:"",lot:"",desc:"",cases:0,qty:0,unit:"kg",price:0,amount:0,expiry:"",shelf:0,itemId:""});save();openReceipt(id);};
-  if($("rPut"))$("rPut").onclick=()=>{hdr();const bad=R.lines.filter(l=>num(l.qty)<=0||!(l.itemId||l.desc));if(!R.lines.length||bad.length){toast(!R.lines.length?"Add at least one line":"Each line needs a description and a quantity");return;}
+  if($("rPut"))$("rPut").onclick=()=>{hdr();const bad=R.lines.filter(l=>lineSQ(l)<=0||!(l.itemId||l.desc));if(!R.lines.length||bad.length){toast(!R.lines.length?"Add at least one line":"Each line needs a description and a quantity");return;}
     let sup=Object.values(D.suppliers).find(s=>nkey(s.name)===nkey(R.supplier));if(!sup&&R.supplier){const sid=uid("s");sup=D.suppliers[sid]={id:sid,name:R.supplier,lead:3};}
     const sk=nkey(R.supplier);let nItems=0,nShelf=0;
     for(const L of R.lines){let it=L.itemId&&D.items[L.itemId];
-      if(!it){const iid=uid("i");it=D.items[iid]={id:iid,name:titleCase(L.desc),unit:L.unit,cost:num(L.price),supplierId:sup?sup.id:"",lots:[],updatedAt:Date.now()};L.itemId=iid;}
+      const SQ=lineSQ(L),conv=lineConv(L),ucost=conv?(SQ>0?Math.round(num(L.amount||num(L.qty)*num(L.price))/SQ*100)/100:0):num(L.price);
+      if(!it){const iid=uid("i");it=D.items[iid]={id:iid,name:titleCase(L.desc),unit:L.newUnit||L.unit,cost:ucost,supplierId:sup?sup.id:"",lots:[],updatedAt:Date.now()};L.itemId=iid;}
       it.supCodes=it.supCodes||{};if(L.code&&sk)it.supCodes[sk]=L.code;if(!it.invName)it.invName=L.desc;if(sup&&!it.supplierId)it.supplierId=sup.id;
-      const sh=Math.min(num(L.shelf),num(L.qty)),inv=num(L.qty)-sh,note="Invoice "+(R.invoice||"");
-      if(inv>0)receive(it,inv,L.lot,L.expiry,note,"",num(L.price),sh>0?Math.round(num(L.cases)*inv/num(L.qty)):num(L.cases),"");
-      if(sh>0){receive(it,sh,L.lot,L.expiry,note,"",num(L.price),inv>0?num(L.cases)-Math.round(num(L.cases)*inv/num(L.qty)):num(L.cases),"shelf");nShelf++;}
+      const sh=Math.min(num(L.shelf),SQ),inv=SQ-sh,note="Invoice "+(R.invoice||"")+(conv?` · ${fmt(num(L.qty))} ${L.unit} billed`:"");const cs=num(L.cases),csInv=sh>0&&SQ>0?Math.round(cs*inv/SQ):cs;
+      if(inv>0)receive(it,inv,L.lot,L.expiry,note,"",ucost,csInv,"");
+      if(sh>0){receive(it,sh,L.lot,L.expiry,note,"",ucost,inv>0?cs-csInv:cs,"shelf");nShelf++;}
       nItems++;}
     R.status="done";R.doneAt=Date.now();save();render();closeSheet();toast("Put away "+nItems+" line"+(nItems===1?"":"s")+(nShelf?" · "+nShelf+" to shelf":""));};
   $("rDel").onclick=()=>{$("rcf").innerHTML=`<div class="confirm"><span style="flex:1">Delete this delivery record?${done?" Stock already put away stays.":""}</span><button class="btn sm b-out" id="yes">Delete</button><button class="btn sm b-sec" id="no">Keep</button></div>`;$("no").onclick=()=>$("rcf").innerHTML="";$("yes").onclick=()=>{delete D.receipts[id];save();render();closeSheet();toast("Delivery deleted");};};
@@ -1035,6 +1043,7 @@ function teachLabel(r,i){
 function parseVM(raw){const t=String(raw).trim();if(!/^2\d{12}$/.test(t))return null;return {kind:"vm",code:t.slice(0,7),value:+t.slice(7,12),raw:t};}
 const isW=u=>/^(kg|kgs|kilo|kilos|kilogram|kilograms)$/i.test(String(u||"").trim())?"kg":/^(lb|lbs|pound|pounds)$/i.test(String(u||"").trim())?"lb":/^(g|gram|grams)$/i.test(String(u||"").trim())?"g":"";
 function qtyFor(r,i){const u=isW(i?i.unit:"");
+  if(i&&i.unit&&!u){return {q:r.count!=null?r.count:1,w:false};}  /* items counted in packs/units: never use the weight */
   if(r.netKg!=null||r.netLb!=null){const kg=r.netKg!=null?r.netKg:r.netLb*0.45359237;
     if(u==="lb")return {q:Math.round((r.netLb!=null?r.netLb:kg/0.45359237)*1000)/1000,w:true};if(u==="g")return {q:Math.round(kg*1000),w:true};return {q:Math.round(kg*1000)/1000,w:true};}
   if(r.count!=null)return {q:r.count,w:false};return {q:1,w:false};}
@@ -1079,10 +1088,15 @@ function linkCode(it,code,meta){if(!it.code)it.code=code;else if(normCode(it.cod
 function askPackaging(it,code,ctx,after){ctx=ctx||{};const cur=codeMeta(it,code)||{},u=esc(it.unit||"units"),pp=packPer(it);
   sheet(`<h3 class="st">What is this barcode on?</h3><p style="margin:-6px 0 0;color:var(--mute)"><b>${esc(it.name)}</b> · barcode <span class="mono">${esc(code)}</span></p>
   <div style="display:flex;gap:8px;flex-wrap:wrap" id="pkN">${["Case","Pack","Other"].map(n=>`<button class="chip" data-pk="${n}" aria-pressed="${(cur.name||"")===n}">${n==="Case"?"Case / box":n==="Pack"?"Pack / unit":"Other"}</button>`).join("")}</div>
-  <label class="field">How much is in one (in ${u})?<input id="pkPer" type="number" inputmode="decimal" step="any" min="0" value="${cur.per||""}" placeholder="e.g. ${isW(it.unit)?"0.125":"15"}"></label>
+  <label class="field" id="pkLbl">${isW(it.unit)?`Weight of one (in ${u}) — leave empty if the label shows the weight`:`How many ${u} in one?`}<input id="pkPer" type="number" inputmode="decimal" step="any" min="0" value="${cur.per||""}" placeholder="${isW(it.unit)?"e.g. 0.125":"e.g. 15"}"></label>
   <p style="color:var(--mute);font-size:12.5px;margin:-4px 2px 0;line-height:1.5" id="pkHint">Used as the quantity when you scan this barcode. Leave empty if the label carries its own weight (it will be read from the label).</p>
   <button class="btn b-pri" id="pkSave">Save</button><button class="btn b-sec" id="pkSkip">Skip</button>`);
-  const hint=()=>{const n=(document.querySelector('#pkN [aria-pressed="true"]')||{}).dataset;const nm=n&&n.pk;if(nm==="Case"&&ctx.count&&pp){$("pkPer").value=Math.round(ctx.count*pp*1000)/1000;$("pkHint").textContent=`Label says ${ctx.count} packs × ${fmt(pp)} ${it.unit} per pack = ${fmt(ctx.count*pp)} ${it.unit}. Scans of this case use the count on each label.`;}};
+  const W=!!isW(it.unit);
+  const hint=()=>{const n=(document.querySelector('#pkN [aria-pressed="true"]')||{}).dataset;const nm=n&&n.pk;
+    if(!W){if(nm==="Pack"){$("pkPer").value=1;$("pkHint").textContent=`Each scan of this barcode adds 1 ${it.unit}.`;}
+      else if(nm==="Case"){if(ctx.count){$("pkPer").value=ctx.count;$("pkHint").textContent=`This label says ${ctx.count} ${it.unit} per box. Boxes with a different count on their label use their own count.`;}else $("pkHint").textContent=`How many ${it.unit} are in one box? Each scan of this box adds that many.`;}
+      return;}
+    if(nm==="Case"&&ctx.count&&pp){$("pkPer").value=Math.round(ctx.count*pp*1000)/1000;$("pkHint").textContent=`Label says ${ctx.count} packs × ${fmt(pp)} ${it.unit} per pack = ${fmt(ctx.count*pp)} ${it.unit}. Scans of this case use the count on each label.`;}};
   $("pkN").onclick=e=>{const b=e.target.closest("[data-pk]");if(!b)return;document.querySelectorAll("#pkN .chip").forEach(x=>x.setAttribute("aria-pressed",x===b));hint();};
   $("pkSkip").onclick=()=>{linkCode(it,code);after(it);};
   $("pkSave").onclick=()=>{const nm=((document.querySelector('#pkN [aria-pressed="true"]')||{}).dataset||{}).pk||"";linkCode(it,code,{name:nm,per:num($("pkPer").value)});toast("Barcode saved"+(nm?" as "+nm.toLowerCase():""));after(it);};}
