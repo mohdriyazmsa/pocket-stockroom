@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pocket Stockroom — inventory for small shops</title>
+<meta name="description" content="Scan barcodes, receive invoices from a photo, deduct POS sales and know what to reorder. Inventory on your phone for small shops and their staff.">
+<meta name="theme-color" content="#1B2433">
+<link rel="icon" href="app/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#F7F8F4;--ink:#1B2433;--steel:#5D6878;--line:#D9DDD3;--tag:#FFD83D;--laser:#E5322D;--app:#5B5BF0;--card:#fff;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--paper:#12171F;--ink:#EEF0EA;--steel:#9AA3B0;--line:#2B3442;--card:#1A212C;color-scheme:dark}}
+:root[data-theme="dark"]{--paper:#12171F;--ink:#EEF0EA;--steel:#9AA3B0;--line:#2B3442;--card:#1A212C;color-scheme:dark}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 17px/1.55 Archivo,system-ui,sans-serif;font-variation-settings:"wdth" 100}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--app);outline-offset:3px;border-radius:4px}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+.wide{font-variation-settings:"wdth" 125;font-stretch:125%}
+.cond{font-variation-settings:"wdth" 75;font-stretch:75%}
+header.top{display:flex;align-items:center;justify-content:space-between;padding:18px 0}
+.brand{display:flex;gap:10px;align-items:center;text-decoration:none;font-weight:800;font-size:18px}
+.brand img{width:34px;height:34px;border-radius:9px}
+.top nav{display:flex;gap:22px;align-items:center;font-size:15px}
+.top nav a{text-decoration:none;color:var(--steel)}
+.top nav a:hover{color:var(--ink)}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 22px;border-radius:999px;font:700 16px Archivo,sans-serif;text-decoration:none;border:2px solid var(--ink);background:var(--ink);color:var(--paper);cursor:pointer}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn.sm{min-height:40px;padding:0 16px;font-size:15px}
+.top nav .btn{color:var(--paper)}
+/* hero */
+.hero>*{min-width:0}
+.hero{display:grid;grid-template-columns:1.1fr .9fr;gap:48px;align-items:center;padding:40px 0 72px}
+h1{font-weight:900;font-size:clamp(40px,6.4vw,76px);line-height:.98;letter-spacing:-.01em;margin:0 0 22px}
+.lede{font-size:20px;color:var(--steel);max-width:34em;margin:0 0 28px}
+.ctas{display:flex;gap:12px;flex-wrap:wrap}
+.fine{color:var(--steel);font-size:14px;margin-top:14px}
+/* the scan demo */
+.demo{position:relative;justify-self:center;width:min(380px,100%)}
+.tagcard{position:relative;background:var(--tag);color:#1B2433;border-radius:6px 6px 18px 18px;padding:26px 24px 22px;box-shadow:0 1px 0 #c9a800,0 18px 40px -18px rgba(27,36,51,.45)}
+.tagcard:before{content:"";position:absolute;top:12px;left:50%;width:16px;height:16px;margin-left:-8px;border-radius:50%;background:var(--paper);box-shadow:inset 0 2px 3px rgba(0,0,0,.25)}
+.tagcard .nm{font-weight:800;font-size:22px;margin-top:14px;line-height:1.15}
+.tagcard .meta{font-size:14px;opacity:.75;margin-top:2px}
+.bars{position:relative;height:96px;margin:18px 0 10px;display:flex;align-items:stretch;gap:0;overflow:hidden}
+.bars i{display:block;background:#1B2433;flex:none}
+.bars .laser{position:absolute;left:-6%;right:-6%;height:3px;top:0;background:var(--laser);box-shadow:0 0 12px 2px rgba(229,50,45,.7);opacity:0}
+.digits{font:500 14px/1 Archivo,sans-serif;font-variation-settings:"wdth" 62;letter-spacing:.32em;text-align:center}
+.count{display:flex;justify-content:space-between;align-items:flex-end;margin-top:18px;border-top:2px solid #1B2433;padding-top:12px}
+.count .lab{font-size:14px;opacity:.8}
+.count .n{font-weight:900;font-size:56px;line-height:.9;font-variation-settings:"wdth" 125;font-stretch:125%;font-variant-numeric:tabular-nums}
+.count .n small{font-size:18px;font-weight:700}
+.chip{position:absolute;right:-12px;bottom:-22px;background:var(--ink);color:var(--paper);padding:10px 14px;border-radius:12px;font-size:14px;font-weight:700;opacity:0;transform:translateY(8px)}
+.go .laser{animation:sweep 1.3s ease-in-out .5s 2 alternate both,gone .3s linear 3.1s forwards}
+@keyframes gone{to{opacity:0;visibility:hidden}}
+.go .chip{animation:pop .45s ease-out 3.1s both}
+@keyframes sweep{0%{top:0;opacity:1}100%{top:calc(100% - 3px);opacity:1}}
+@keyframes pop{to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.go .laser{animation:none}.go .chip{animation:none;opacity:1;transform:none}}
+/* sections */
+section{padding:72px 0;border-top:1px solid var(--line)}
+h2{font-weight:900;font-size:clamp(30px,4vw,46px);line-height:1.04;margin:0 0 14px;max-width:18em}
+.intro{color:var(--steel);font-size:19px;max-width:36em;margin:0 0 40px}
+/* day sequence */
+.day{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,1fr);gap:0;counter-reset:d}
+.day li{counter-increment:d;padding:0 22px 0 0;position:relative}
+.day li:before{content:counter(d);display:block;font-weight:900;font-size:64px;line-height:1;font-variation-settings:"wdth" 125;font-stretch:125%;color:var(--tag);-webkit-text-stroke:2px var(--ink);margin-bottom:14px}
+.day h3{font-size:20px;margin:0 0 6px;font-weight:800}
+.day p{margin:0;color:var(--steel);font-size:16px}
+.day .when{display:block;font-size:14px;font-weight:700;color:var(--ink);margin-bottom:4px}
+/* features as a shelf */
+.shelf{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-bottom:10px solid var(--ink);border-radius:0 0 4px 4px}
+.shelf>div{padding:26px 24px 30px;border-left:1px solid var(--line)}
+.shelf>div:first-child,.shelf>div:nth-child(3n+1){border-left:0;padding-left:0}
+.shelf h3{font-size:19px;margin:0 0 6px;font-weight:800}
+.shelf p{margin:0;color:var(--steel);font-size:16px}
+.shelf>div:nth-child(n+4){border-top:1px solid var(--line)}
+/* pricing tags */
+.prices{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;align-items:start}
+.pt{background:var(--card);border:2px solid var(--ink);border-radius:6px 6px 16px 16px;padding:24px;position:relative}
+.pt.hot{background:var(--tag);color:#1B2433;border-color:#1B2433}
+.pt h3{margin:0;font-size:20px;font-weight:800}
+.pt .who{margin:4px 0 16px;font-size:15px;opacity:.8}
+.pt .amt{font-weight:900;font-size:52px;line-height:1;font-variation-settings:"wdth" 125;font-stretch:125%}
+.pt .amt small{font-size:16px;font-weight:600;font-variation-settings:"wdth" 100;font-stretch:100%}
+.pt .yr{font-size:14px;opacity:.75;margin:6px 0 16px}
+.pt ul{margin:0;padding:0 0 0 18px;font-size:15px}
+.pt li{margin:4px 0}
+.beta{margin:26px 0 0;padding:16px 18px;border-left:6px solid var(--tag);background:var(--card);font-size:16px;max-width:44em}
+/* faq */
+.faq{max-width:760px}
+.faq details{border-bottom:1px solid var(--line);padding:16px 0}
+.faq summary{cursor:pointer;font-weight:700;font-size:18px;list-style:none;display:flex;justify-content:space-between;gap:12px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary:after{content:"+";font-weight:400;font-size:24px;line-height:1}
+.faq details[open] summary:after{content:"–"}
+.faq p{margin:10px 0 0;color:var(--steel)}
+.end{text-align:left;padding:80px 0}
+.end h2{max-width:14em}
+footer{border-top:1px solid var(--line);padding:28px 0 40px;color:var(--steel);font-size:14px;display:flex;flex-wrap:wrap;gap:8px 22px;justify-content:space-between}
+footer nav{display:flex;gap:18px}
+@media (max-width:900px){
+  .hero{grid-template-columns:1fr;gap:56px;padding-top:20px}
+  .day{grid-template-columns:1fr 1fr;row-gap:36px}
+  .shelf{grid-template-columns:1fr 1fr}
+  .shelf>div,.shelf>div:nth-child(3n+1){border-left:1px solid var(--line);padding-left:24px}
+  .shelf>div:nth-child(2n+1){border-left:0;padding-left:0}
+  .shelf>div:nth-child(n+3){border-top:1px solid var(--line)}
+  .prices{grid-template-columns:1fr}
+}
+@media (max-width:560px){
+  body{font-size:16px}
+  .wrap{padding:0 16px}
+  .top nav a:not(.btn){display:none}
+  .lede{font-size:18px}
+  .day,.shelf{grid-template-columns:1fr}
+  .shelf>div,.shelf>div:nth-child(n){border-left:0;padding-left:0;border-top:1px solid var(--line)}
+  .shelf>div:first-child{border-top:0}
+  .chip{right:0}
+  section{padding:56px 0}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top">
+  <a class="brand" href="./"><img src="app/icon-192.png" alt="">Pocket Stockroom</a>
+  <nav aria-label="Main"><a href="#how">How it works</a><a href="#pricing">Pricing</a><a href="#faq">Questions</a><a class="btn sm" href="app/">Open the app</a></nav>
+</header>
+
+<main>
+<div class="hero">
+  <div>
+    <h1 class="wide">Know what's on the shelf without counting it.</h1>
+    <p class="lede">Pocket Stockroom is inventory on your phone for small shops. Scan a case when it arrives, take a photo of the invoice, drop in your POS sales report — and the app tells you what's left and what to reorder.</p>
+    <div class="ctas"><a class="btn" href="app/">Start free</a><a class="btn ghost" href="#how">See how a day goes</a></div>
+    <p class="fine">Free during the beta. No credit card. Works on iPhone and Android, right in the browser.</p>
+  </div>
+  <div class="demo" id="demo" aria-label="Example: scanning a product updates its count">
+    <div class="tagcard">
+      <div class="nm">Beef Franks (Regular)</div>
+      <div class="meta">13 oz · Counter + storage</div>
+      <div class="bars" id="bars" aria-hidden="true"><span class="laser"></span></div>
+      <div class="digits" aria-hidden="true">0 67549 00006 3</div>
+      <div class="count"><div class="lab">On hand<br>after today's sales</div><div class="n" id="n">228</div></div>
+    </div>
+    <div class="chip" role="status">47 sold · reorder Thursday</div>
+  </div>
+</div>
+
+<section id="how">
+  <h2 class="wide">One day in the stockroom.</h2>
+  <p class="intro">Built by someone who runs a receiving dock in Montréal, around the four jobs that eat a small team's day.</p>
+  <ol class="day">
+    <li><span class="when">7 am · delivery</span><h3>Receive</h3><p>Photograph the invoice. Lines, quantities and lot numbers are read for you and matched to your products.</p></li>
+    <li><span class="when">8:30 am · shelf</span><h3>Stock the counter</h3><p>Move cases from storage to the counter with a scan. Storage, counter and the overall total stay separate.</p></li>
+    <li><span class="when">6 pm · close</span><h3>Deduct sales</h3><p>Import the POS sales report as a PDF or photo. Packs come off by the pack, deli by the kilo.</p></li>
+    <li><span class="when">Weekly</span><h3>Reorder</h3><p>Low and expiring items rise to the top. Send a purchase order to the supplier by email in two taps.</p></li>
+  </ol>
+</section>
+
+<section>
+  <h2 class="wide">Made for the back room, not the boardroom.</h2>
+  <p class="intro">No setup project, no laptop, no barcode gun. If your staff can use a phone camera, they can use this.</p>
+  <div class="shelf">
+    <div><h3>Scans any barcode</h3><p>Product barcodes, case labels and GS1 codes with lot and expiry dates — read straight from the camera.</p></div>
+    <div><h3>Lots and expiry, first in first out</h3><p>Every delivery keeps its lot. Sales come off the oldest stock first, and you see what expires this week.</p></div>
+    <div><h3>Packs and weights</h3><p>Count franks by the pack and smoked meat by the kilo (or pound) in the same list.</p></div>
+    <div><h3>Your whole team</h3><p>Invite staff with a one-time code. Everyone sees the same numbers, updated within about 30 seconds.</p></div>
+    <div><h3>Works without signal</h3><p>Walk-in fridges kill Wi-Fi. The app keeps working and syncs when you're back in range.</p></div>
+    <div><h3>Your data, in Canada</h3><p>Stock data is stored in Montréal. Export everything to Excel or a backup file whenever you want.</p></div>
+  </div>
+</section>
+
+<section id="pricing">
+  <h2 class="wide">Priced like a shelf tag: one number, no surprises.</h2>
+  <p class="intro">All prices in Canadian dollars. Every plan has every feature — plans differ only in team size and number of products.</p>
+  <div class="prices">
+    <div class="pt"><h3>Solo</h3><p class="who">One person, one phone</p><div class="amt">$0</div><p class="yr">Free forever</p><ul><li>Up to 100 products</li><li>1 user</li><li>Every feature</li></ul></div>
+    <div class="pt hot"><h3>Shop</h3><p class="who">A store and its staff</p><div class="amt">$19<small> /month</small></div><p class="yr">or $190 a year — two months free</p><ul><li>Unlimited products</li><li>Up to 5 users</li><li>Every feature</li></ul></div>
+    <div class="pt"><h3>Team</h3><p class="who">Several stores or a warehouse</p><div class="amt">$49<small> /month</small></div><p class="yr">or $490 a year</p><ul><li>Unlimited products</li><li>Up to 20 users</li><li>Every feature, plus help setting up</li></ul></div>
+  </div>
+  <p class="beta"><b>Beta:</b> every account gets all Shop features free while we're in beta. We'll email you at least 30 days before paid plans start, and you can export your data at any time.</p>
+</section>
+
+<section id="faq">
+  <h2 class="wide">Questions shop owners ask.</h2>
+  <div class="faq">
+    <details><summary>Do I need to download anything?</summary><p>No. Open the app link in Safari or Chrome, then use Share → Add to Home Screen. It opens full-screen like any other app and works offline.</p></details>
+    <details><summary>Which POS systems work with the sales import?</summary><p>Any POS that can export a sales report by product as a PDF. The first time, you link each report line to a product; after that the app remembers. Photos of printed reports work too, but a PDF is exact.</p></details>
+    <details><summary>Can I bring my existing product list?</summary><p>Yes — scan products as you go, add them straight from an invoice or sales report, or restore from a Pocket Stockroom backup file.</p></details>
+    <details><summary>What happens to my data if I stop paying?</summary><p>You keep read access and can export everything to Excel or a backup file. We don't delete a paid account's data without warning you first.</p></details>
+    <details><summary>Who can see my stock?</summary><p>Only the people you invite. Each business's data is locked to its own members, stored in Canada, and never sold or shared. Read the <a href="privacy.html">privacy policy</a>.</p></details>
+  </div>
+</section>
+
+<section class="end">
+  <h2 class="wide">Count less. Sell more of what's actually on the shelf.</h2>
+  <div class="ctas" style="margin-top:22px"><a class="btn" href="app/">Start free</a><a class="btn ghost" href="#pricing">See pricing</a></div>
+</section>
+</main>
+
+<footer><span>© 2026 Pocket Stockroom · Montréal, Québec</span><nav aria-label="Legal"><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a></nav></footer>
+</div>
+<script>
+(function(){
+  // draw a deterministic barcode
+  var b=document.getElementById("bars"),w=[1,3,1,2,2,1,1,3,2,1,1,2,3,1,1,1,2,2,1,3,1,1,2,1,3,2,1,1,2,3,1,2,1,1,3,1,2,2,1,1,1,3,2,1,2,1,1,2,3,1];
+  w.forEach(function(x,k){var i=document.createElement("i");i.style.width=(x*2.4)+"px";i.style.marginRight=((w[(k*7)%w.length]%2?2:4))+"px";b.appendChild(i);});
+  var d=document.getElementById("demo"),n=document.getElementById("n");
+  var reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function run(){d.classList.add("go");if(reduce){n.textContent="181";return;}
+    setTimeout(function(){var s=228,e=181,t0=null;function f(t){if(!t0)t0=t;var p=Math.min(1,(t-t0)/700);n.textContent=Math.round(s+(e-s)*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(f);}requestAnimationFrame(f);},2700);}
+  if("IntersectionObserver" in window){var io=new IntersectionObserver(function(es){if(es[0].isIntersecting){run();io.disconnect();}},{threshold:.5});io.observe(d);}else run();
+})();
+</script>
+</body>
+</html>
