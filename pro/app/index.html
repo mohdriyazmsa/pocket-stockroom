@@ -288,6 +288,18 @@ html[data-look="clean"] .mode button[aria-pressed="true"],html[data-look="clean"
 .nsx{margin:0;background:var(--bg)}
 #undoBar{position:fixed;left:12px;right:12px;bottom:calc(92px + env(safe-area-inset-bottom));z-index:60;background:#111114;color:#fff;border-radius:14px;padding:10px 10px 10px 16px;display:flex;align-items:center;gap:12px;font-size:15px;box-shadow:0 8px 24px rgba(0,0,0,.25);max-width:520px;margin:0 auto}
 #undoBar[hidden]{display:none}
+#countPill{position:fixed;bottom:calc(96px + env(safe-area-inset-bottom));left:12px;z-index:55;display:flex;align-items:center;gap:8px;background:#111114;color:#fff;border:0;border-radius:999px;padding:8px 8px 8px 14px;font:600 14px var(--f-body);box-shadow:0 6px 18px rgba(0,0,0,.25);cursor:pointer}
+#countPill b{background:#fff;color:#111114;border-radius:999px;padding:4px 10px;font-size:13px}
+#countPill .cdot{width:8px;height:8px;border-radius:4px;background:#34c759;animation:cpulse 1.6s infinite}
+@keyframes cpulse{50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){#countPill .cdot{animation:none}}
+.crow{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;width:100%;padding:12px 0;border:0;border-top:1px solid var(--line);background:none;font:inherit;color:inherit;text-align:left;cursor:pointer}
+.crow:first-child{border-top:0}
+.crow .cn{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.crow .cq{font-weight:700;font-variant-numeric:tabular-nums}
+.crow .cq small{font-weight:400;color:var(--mute)}
+.crow .cd{font-size:13px;font-weight:700;min-width:64px;text-align:right}
+.crow .cd.ok{color:var(--ok)}.crow .cd.neg{color:var(--out)}.crow .cd.pos{color:var(--info)}
 #undoBar span{flex:1;min-width:0}
 #undoBar .btn{background:#fff;color:#111114;min-height:36px;padding:0 16px;font-weight:700}
 .today{background:var(--s1);border-radius:16px;margin:0 0 12px;overflow:hidden}
@@ -575,7 +587,7 @@ function resetLocal(keepSettings){const st=keepSettings?D.settings:undefined;D={
 async function enterWorkspace(id,mode){/* mode: "upload" keeps local data and pushes it, "replace" wipes local and pulls */
   await loadWorkspace(id);
   if(mode==="replace")resetLocal(false);else{for(const i of Object.values(D.items))if(i.example)delete D.items[i.id];SY={cursor:0,h:{}};lsSet(KS,SY);}
-  D.settings={...(D.settings||{}),onboarded:true,biz:WS.name};save();await sync();render();}
+  D.settings={...(D.settings||{}),onboarded:true,biz:WS.name};save();await sync();render();if(mode!=="replace")uploadAllPhotos();}
 function signOutLocal(){AUTH=null;WS=null;lsSet(KA,null);lsSet(KW,null);resetLocal(false);D.settings={onboarded:false};suppressSync=true;save();suppressSync=false;render();}
 function trialLeft(){if(!WS||!WS.trial_ends||WS.plan!=="trial")return null;return Math.max(0,Math.ceil((new Date(WS.trial_ends)-Date.now())/DAY));}
 /* email links: confirm sign-up / reset password */
@@ -584,6 +596,7 @@ function trialLeft(){if(!WS||!WS.trial_ends||WS.plan!=="trial")return null;retur
   history.replaceState(null,"",location.pathname);window.__authLinkType=h.get("type")||"signup";})();
 async function fillUser(){if(AUTH&&!AUTH.user.id){const u=await authCall("user",null,"GET");AUTH.user={id:u.id,email:u.email};lsSet(KA,AUTH);}}
 
+const KC="stockroom-pro-count";let COUNT=null;try{COUNT=JSON.parse(localStorage.getItem(KC)||"null");}catch(e){}
 /* ===================== UNDO (last change, 24 h) ===================== */
 const KU="stockroom-pro-undo";let UNDO=null;try{UNDO=JSON.parse(localStorage.getItem(KU)||"null");}catch(e){}
 let ckAt=0,undoShown=true;
@@ -737,12 +750,14 @@ function renderToday(){const el=$("todayBox");if(!el)return;const all=items();if
   if(undoLive())rows.push({c:"var(--dim)",t:"Undo: "+undoLabel(),s:"Done "+new Date(UNDO.at).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})+" · available for 24 hours",a:"undo"});
   if(stocked&&Date.now()-lastSale>18*3600e3)rows.push({c:"var(--a1)",t:"Deduct yesterday's sales",s:lastSale?"Last report "+new Date(lastSale).toLocaleDateString([], {weekday:"short",month:"short",day:"numeric"}):"Add your POS sales report (PDF or photo)",a:"sales"});
   const ro=all.filter(i=>suggest(i)>0);if(ro.length)rows.push({c:"var(--out)",t:`Reorder ${ro.length} product${ro.length===1?"":"s"}`,s:ro.slice(0,2).map(i=>i.name).join(", ")+(ro.length>2?` and ${ro.length-2} more`:""),a:"ord"});
-  const ex=all.filter(i=>(expDays(nearestExp(i))??99)<=7);if(ex.length)rows.push({c:"var(--low)",t:`${ex.length} product${ex.length===1?"":"s"} expire within 7 days`,s:ex.slice(0,2).map(i=>i.name).join(", ")+(ex.length>2?` and ${ex.length-2} more`:""),a:"exp"});
+  const xd=num((D.settings||{}).expDays)||7,ex=all.filter(i=>(expDays(nearestExp(i))??99)<=xd);if(ex.length)rows.push({c:"var(--low)",t:`${ex.length} product${ex.length===1?"":"s"} expire within ${xd} days`,s:ex.slice(0,2).map(i=>i.name).join(", ")+(ex.length>2?` and ${ex.length-2} more`:""),a:"exp"});
   const cf=all.filter(i=>atLoc(i,"shelf")<=0&&atLoc(i,"")>0);if(cf.length)rows.push({c:"var(--info)",t:`Refill the counter: ${cf.length} product${cf.length===1?"":"s"}`,s:"Empty on the counter, in stock in storage",a:"loc"});
+  if(COUNT)rows.unshift({c:"#34c759",t:"Finish your stock count",s:Object.keys(COUNT.lines).length+" products counted so far",a:"count"});
+  else{const lc=(D.settings||{}).lastCount||0;if(stocked&&Date.now()-lc>7*DAY)rows.push({c:"var(--mute)",t:"Weekly stock count",s:lc?"Last count "+new Date(lc).toLocaleDateString([], {month:"short",day:"numeric"}):"Scan shelves to check the numbers are right",a:"count"});}
   rows.push({c:"var(--ok)",t:"Receive a delivery",s:"Take a photo of the invoice",a:"recv"});
-  const n=rows.filter(r=>r.a!=="recv"&&r.a!=="undo").length;
+  const n=rows.filter(r=>r.a!=="recv"&&r.a!=="undo").length;try{if(navigator.setAppBadge){n?navigator.setAppBadge(n):navigator.clearAppBadge();}}catch(e){}
   el.innerHTML=`<div class="th"><b>Today</b><small>${n?n+" thing"+(n===1?"":"s")+" to do":"All caught up"}</small></div>`+rows.map(r=>r.a==="sales"?`<label class="tr" for="salesPdf"><span class="dt" style="background:${r.c}"></span><span class="tx"><b>${esc(r.t)}</b><small>${esc(r.s)}</small></span><span class="go" aria-hidden="true">›</span></label>`:r.a==="recv"?`<label class="tr" for="invPhoto"><span class="dt" style="background:${r.c}"></span><span class="tx"><b>${esc(r.t)}</b><small>${esc(r.s)}</small></span><span class="go" aria-hidden="true">›</span></label>`:`<button class="tr" data-td="${r.a}"><span class="dt" style="background:${r.c}"></span><span class="tx"><b>${esc(r.t)}</b><small>${esc(r.s)}</small></span><span class="go" aria-hidden="true">${r.a==="undo"?"↶":"›"}</span></button>`).join("");
-  el.querySelectorAll("[data-td]").forEach(b=>b.onclick=()=>{const a=b.dataset.td;if(a==="undo")doUndo();else if(a==="ord")document.querySelector('[data-tab="ord"]').click();
+  el.querySelectorAll("[data-td]").forEach(b=>b.onclick=()=>{const a=b.dataset.td;if(a==="undo")doUndo();else if(a==="count")countSheet();else if(a==="ord")document.querySelector('[data-tab="ord"]').click();
     else if(a==="exp"){const c=document.querySelector('#chips [data-f="Attention"],#chips [data-attn]')||document.querySelector('[data-attn]');if(c)c.click();}
     else if(a==="loc"){const m=document.querySelector('#mode [data-m="loc"]');if(m)m.click();}});}
 function renderIns(){
@@ -920,7 +935,7 @@ function itemForm(ex,code,asProduct,pre){pre=pre||{};
     if($("fCodes")){const cm={};document.querySelectorAll("#fCodes [data-cc]").forEach(r=>{const n=r.querySelector("[data-cn]").value,p=num(r.querySelector("[data-cp]").value);if(n||p)cm[normCode(r.dataset.cc)]={name:n,per:p};});D.items[id].cmeta=cm;}
     D.items[id].salesCodes=$("fSalesCode").value.split(/[,\s]+/).map(x=>x.trim()).filter(Boolean);
     {const sc=$("fSupCode").value.trim(),sn=nkey((D.suppliers[D.items[id].supplierId]||{}).name);if(sn){D.items[id].supCodes=D.items[id].supCodes||{};if(sc)D.items[id].supCodes[sn]=sc;else delete D.items[id].supCodes[sn];}}
-    try{if(newPhoto){await PH.put(id,newPhoto);D.items[id].photo=true;}else if(dropPhoto){await PH.del(id);D.items[id].photo=false;}}catch(err){toast("Saved, but the photo couldn't be stored");}
+    try{if(newPhoto){await PH.put(id,newPhoto);D.items[id].photo=true;D.items[id].photoV=Date.now();}else if(dropPhoto){await PH.del(id);D.items[id].photo=false;}}catch(err){toast("Saved, but the photo couldn't be stored");}
     save();render();closeSheet();if(mode==="cat"||asProduct)openProduct(id);};
 }
 function supForm(ex){
@@ -1401,6 +1416,8 @@ function unknownCode(code,label){sheet(`<span class="pill p-info" style="align-s
   <button class="btn b-pri" id="ucLink">Link to an existing item</button><button class="btn b-sec" id="ucNew">Create a new item</button>`);
   $("ucNew").onclick=()=>itemForm(null,code);$("ucLink").onclick=()=>{LINKCTX={};linkPicker(code,it=>openItem(it.id));};}
 function handleCode(code,bfmt){code=String(code||"").trim();if(!code)return;scanMsg("");
+  if(COUNT&&!PENDING_LINK){const g=parseGS1(code),vm=!g&&parseVM(code);let it=g?byCode(g.gtin):vm&&byCode(vm.code);if(!it)it=byCode(code);
+    if(!it){toast("Not in your products — add it first, then count it");return;}const m=codeMeta(it,code);countEntry(it,g&&g.count?g.count:g&&g.weight?g.weight:m&&num(m.per)>0?num(m.per):1);return;}
   if(PENDING_LINK){const it=D.items[PENDING_LINK];PENDING_LINK=null;if(it){const g0=parseGS1(code),key=g0?g0.gtin:code,other=byCode(key);
     if(other&&other.id!==it.id){sheet(`<h3 class="st">Barcode already used</h3><p style="color:var(--mute);margin:0">This barcode belongs to <b>${esc(other.name)}</b>. Remove it there first (Edit details) if it should move.</p><button class="btn b-sec" id="x1">OK</button>`);$("x1").onclick=()=>openItem(it.id);return;}
     askPackaging(it,key,{count:g0?g0.count:null},x=>openItem(x.id));return;}}
@@ -1518,6 +1535,58 @@ applyLook(document.documentElement.dataset.look||"clean");
 $("today").textContent=new Date().toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"});
 render();
 
+
+
+/* ===================== PHOTOS IN THE CLOUD ===================== */
+const KPV="stockroom-pro-phv";let PHV={};try{PHV=JSON.parse(localStorage.getItem(KPV)||"{}");}catch(e){}
+const savePHV=()=>{try{localStorage.setItem(KPV,JSON.stringify(PHV));}catch(e){}};
+const phPath=id=>`${WS.id}/${encodeURIComponent(id)}.jpg`;
+async function photoUp(id,blob){if(!signedIn()||!blob)return;try{const t=await freshToken();const r=await fetch(`${SB.url}/storage/v1/object/photos/${phPath(id)}`,{method:"POST",headers:{apikey:SB.key,Authorization:"Bearer "+t,"x-upsert":"true","Content-Type":blob.type||"image/jpeg"},body:blob});
+  if(r.ok){const it=D.items[id];PHV[id]=it&&it.photoV||1;savePHV();}}catch(e){}}
+async function photoDown(id){if(!signedIn())return null;try{const t=await freshToken();const r=await fetch(`${SB.url}/storage/v1/object/authenticated/photos/${phPath(id)}`,{headers:{apikey:SB.key,Authorization:"Bearer "+t}});return r.ok?await r.blob():null;}catch(e){return null;}}
+{const _put=PH.put.bind(PH),_url=PH.url.bind(PH);
+  PH.put=async(id,blob,fromCloud)=>{await _put(id,blob);if(!fromCloud)photoUp(id,blob);};
+  PH.url=async id=>{const it=D.items[id];const stale=it&&it.photo&&signedIn()&&(it.photoV||1)!==(PHV[id]||0);let u=stale?null:await _url(id);
+    if(!u&&it&&it.photo&&signedIn()){const b=await photoDown(id);if(b){await _put(id,b);PHV[id]=it.photoV||1;savePHV();return PH.cache[id];}if(!stale)return null;return await _url(id);}
+    if(u&&it&&it.photo&&signedIn()&&!(id in PHV)){PHV[id]=it.photoV||1;savePHV();}return u;};}
+async function uploadAllPhotos(){if(!signedIn())return;for(const it of Object.values(D.items)){if(!it.photo)continue;const b=await PH.blob(it.id);if(b)await photoUp(it.id,b);}}
+/* ===================== STOCK COUNT (scan to count) ===================== */
+const saveCount=()=>{try{COUNT?localStorage.setItem(KC,JSON.stringify(COUNT)):localStorage.removeItem(KC);}catch(e){}paintCountPill();};
+function startCount(){COUNT={at:Date.now(),lines:{}};saveCount();countSheet();toast("Count started — scan your first product");}
+function paintCountPill(){let b=$("countPill");if(!COUNT){if(b)b.remove();return;}if(!b){b=document.createElement("button");b.id="countPill";b.onclick=()=>countSheet();document.body.appendChild(b);}
+  const n=Object.keys(COUNT.lines).length;b.innerHTML=`<span class="cdot"></span>Counting · ${n} product${n===1?"":"s"}<b>Open</b>`;}
+function countEntry(it,addHint){const L=COUNT.lines[it.id]||{q:0};const per=num(addHint)||1,u=esc(it.unit||"units");
+  sheet(`<span class="pill p-info" style="align-self:flex-start">Stock count</span><h3 class="st">${esc(it.name)}</h3>
+  <div class="split2"><div><b class="mono">${fmt(L.q)}</b><span>counted so far</span></div><div><b class="mono" style="color:var(--mute)">${fmt(qty(it))}</b><span>the app expects</span></div></div>
+  <label class="field">${L.q?"Add":"How many"} ${u}?<input id="ceN" type="number" inputmode="decimal" step="any" value="${fmt(per)}" style="font-size:28px;font-weight:700;text-align:center;height:64px"></label>
+  <div class="g2"><button class="btn b-pri" id="ceAdd">${L.q?"Add":"Save"}</button>${L.q?'<button class="btn b-sec" id="ceSet">Replace total</button>':'<button class="btn b-sec" id="ceZero">None here (0)</button>'}</div>
+  <button class="btn b-sec" id="ceNext">Save and scan next</button><button class="btn" id="ceBack" style="background:none;color:var(--mute)">Back to count list</button>`);
+  const v=()=>num($("ceN").value);setTimeout(()=>{const x=$("ceN");if(x){x.focus();x.select();}},120);
+  const put=(n,next)=>{COUNT.lines[it.id]={q:Math.max(0,n),at:Date.now()};saveCount();toast(it.name+": "+fmt(COUNT.lines[it.id].q)+" "+(it.unit||""));if(next){closeSheet();setTimeout(()=>$("liveBtn").click(),150);}else countSheet();};
+  $("ceAdd").onclick=()=>put(L.q+v());if($("ceSet"))$("ceSet").onclick=()=>put(v());if($("ceZero"))$("ceZero").onclick=()=>put(0);
+  $("ceNext").onclick=()=>put(L.q+v(),true);$("ceBack").onclick=()=>countSheet();}
+function countRows(){return Object.entries(COUNT.lines).map(([id,L])=>{const it=D.items[id];if(!it)return null;const exp=qty(it),d=L.q-exp;return {it,L,exp,d,val:d*uval(it)};}).filter(Boolean).sort((a,b)=>b.L.at-a.L.at);}
+function countSheet(){if(!COUNT){startCount();return;}const rows=countRows(),diff=rows.filter(r=>Math.abs(r.d)>1e-9);
+  sheet(`<h3 class="st">Stock count</h3><p style="margin:-6px 0 0;color:var(--mute);font-size:14px">Started ${new Date(COUNT.at).toLocaleString([], {weekday:"short",hour:"numeric",minute:"2-digit"})}. Only the products you count will change.</p>
+  <div class="g2"><button class="btn b-pri" id="csScan">Scan a product</button><button class="btn b-sec" id="csPick">Pick from list</button></div>
+  <div id="csPickBox"></div>
+  ${rows.length?`<div class="panel" style="padding:2px 14px">${rows.map(r=>`<button class="crow" data-ci="${esc(r.it.id)}"><span class="cn">${esc(r.it.name)}</span><span class="cq">${fmt(r.L.q)} <small>${esc(r.it.unit||"")}</small></span><span class="cd ${Math.abs(r.d)<1e-9?"ok":r.d<0?"neg":"pos"}">${Math.abs(r.d)<1e-9?"matches":(r.d>0?"+":"−")+fmt(Math.abs(r.d))}</span></button>`).join("")}</div>`:'<div class="empty"><b>Nothing counted yet</b>Scan a product or pick it from the list, then type how many you see.</div>'}
+  ${rows.length?`<button class="btn b-pri" id="csDone">Review ${rows.length} count${rows.length===1?"":"s"}${diff.length?` · ${diff.length} differ`:""}</button>`:""}
+  <button class="btn" id="csCancel" style="background:none;color:var(--out)">Cancel count</button><button class="btn b-sec" id="csHide">Keep counting later</button>`);
+  $("csScan").onclick=()=>{closeSheet();setTimeout(()=>$("liveBtn").click(),150);};$("csHide").onclick=closeSheet;
+  $("csPick").onclick=()=>{const its=items().sort((a,b)=>String(a.name).localeCompare(String(b.name)));$("csPickBox").innerHTML=`<select class="inp" id="csSel"><option value="">Choose a product…</option>${its.map(i=>`<option value="${esc(i.id)}">${esc(i.name)}${COUNT.lines[i.id]?" ✓":""}</option>`).join("")}</select>`;$("csSel").onchange=()=>{const it=D.items[$("csSel").value];if(it)countEntry(it);};};
+  document.querySelectorAll("[data-ci]").forEach(b=>b.onclick=()=>countEntry(D.items[b.dataset.ci]));
+  $("csCancel").onclick=()=>{sheet(`<h3 class="st">Cancel this count?</h3><p style="color:var(--mute)">Nothing in your stock changes. The ${rows.length} count${rows.length===1?"":"s"} you typed are thrown away.</p><button class="btn b-out" id="ccY">Cancel count</button><button class="btn b-sec" id="ccN">Keep counting</button>`);$("ccN").onclick=countSheet;$("ccY").onclick=()=>{COUNT=null;saveCount();closeSheet();toast("Count cancelled");};};
+  if($("csDone"))$("csDone").onclick=countReview;}
+function countReview(){const rows=countRows(),diff=rows.filter(r=>Math.abs(r.d)>1e-9),dv=diff.reduce((a,r)=>a+r.val,0);
+  sheet(`<h3 class="st">Review count</h3>
+  <div class="split2 s3"><div><b class="mono">${rows.length}</b><span>counted</span></div><div><b class="mono" style="color:var(--ok)">${rows.length-diff.length}</b><span>match</span></div><div><b class="mono" style="color:${diff.length?"var(--low)":"var(--ok)"}">${diff.length}</b><span>differ</span></div></div>
+  ${diff.length?`<div class="panel" style="padding:2px 14px">${diff.map(r=>`<div class="crow" style="cursor:default"><span class="cn">${esc(r.it.name)}<br><small style="color:var(--mute)">app ${fmt(r.exp)} → counted ${fmt(r.L.q)} ${esc(r.it.unit||"")}</small></span><span class="cd ${r.d<0?"neg":"pos"}">${r.d>0?"+":"−"}${fmt(Math.abs(r.d))}</span></div>`).join("")}</div>
+  <p style="margin:0;font-size:14px;color:var(--mute)">${Math.abs(dv)>=0.005?`Value change ${dv<0?"−":"+"}${money(Math.abs(dv))}. `:""}Missing stock is taken from ${D.takeFrom==="counter"?"the counter":"storage"} first; extra stock goes into storage.</p>`:'<div class="ok-box">Every count matches the app. Nothing needs to change.</div>'}
+  <button class="btn b-pri" id="crGo">${diff.length?`Update ${diff.length} product${diff.length===1?"":"s"}`:"Finish count"}</button><button class="btn b-sec" id="crBack">Back</button>`);
+  $("crBack").onclick=countSheet;
+  $("crGo").onclick=()=>{if(diff.length){ckpt(`Stock count: ${diff.length} product${diff.length===1?"":"s"} updated`);for(const r of diff)setCount(r.it,r.L.q,"Stock count");}
+    D.settings={...(D.settings||{}),lastCount:Date.now()};COUNT=null;saveCount();save();render();closeSheet();toast(diff.length?`Count saved · ${diff.length} updated`:"Count saved · all matched");};}
 /* ===================== BRING OVER DATA FROM POCKET STOCKROOM ===================== */
 function oldAppData(){try{const r=localStorage.getItem("pocket-stockroom-v3");if(!r)return null;const d=JSON.parse(r);return d&&d.items&&Object.keys(d.items).length?d:null;}catch(e){return null;}}
 async function importOldApp(){const d=oldAppData();if(!d)return 0;if(Object.keys(D.items).length)ckpt("Brought over Pocket Stockroom data");
@@ -1546,11 +1615,12 @@ function setupSheet(first){const st=D.settings||{};
   sheet(`<h3 class="st">${first?"Your shop":"Business settings"}</h3>
   <label class="field">Business name<input id="suBiz" value="${esc(st.biz||"")}" placeholder="e.g. Corner Deli" autocomplete="organization"${signedIn()&&WS.role!=="owner"?" disabled":""}></label>
   <div class="g2"><label class="field">Currency<select class="inp" id="suCur">${CURS.map(([c,n])=>`<option value="${c}"${(st.currency||guessCur())===c?" selected":""}>${c} · ${n}</option>`).join("")}</select></label>
+  <label class="field">Warn about expiry<select class="inp" id="suX">${[3,5,7,10,14,21].map(d=>`<option value="${d}"${(num(st.expDays)||7)===d?" selected":""}>${d} days before</option>`).join("")}</select></label>
   <label class="field">Weigh items in<select class="inp" id="suW"><option value="kg"${(st.wunit||guessW())==="kg"?" selected":""}>kg</option><option value="lb"${(st.wunit||guessW())==="lb"?" selected":""}>lb</option></select></label></div>
   ${first?`<label style="display:flex;gap:10px;align-items:center;font-size:15px;padding:4px 2px"><input type="checkbox" id="suEx" style="width:20px;height:20px"> Add a few example items to play with</label>`:""}
   <button class="btn b-pri" id="suGo">${first?"Start":"Save"}</button>${first?"":'<button class="btn b-sec" id="suX">Cancel</button>'}`);
   if($("suX"))$("suX").onclick=closeSheet;
-  $("suGo").onclick=async()=>{const biz=$("suBiz").value.trim();D.settings={...(D.settings||{}),biz,currency:$("suCur").value,wunit:$("suW").value,onboarded:true};
+  $("suGo").onclick=async()=>{const biz=$("suBiz").value.trim();D.settings={...(D.settings||{}),biz,currency:$("suCur").value,wunit:$("suW").value,expDays:num($("suX").value)||7,onboarded:true};
     if(first&&$("suEx").checked)seed();save();
     if(signedIn()&&WS.role==="owner"&&biz&&biz!==WS.name){try{await api(`workspaces?id=eq.${WS.id}`,{method:"PATCH",body:JSON.stringify({name:biz})});WS.name=biz;lsSet(KW,WS);}catch(e){}}
     closeSheet();render();toast(first?"Ready — scan your first item":"Saved");};}
@@ -1634,6 +1704,7 @@ async function bootAccount(){
   if(!(D.settings&&D.settings.onboarded))welcome();}
 
 bootAccount();
+paintCountPill();
 if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
 window.__D=()=>D;window.__ocrLines=(f,o)=>ocrLines(f,()=>{},o);window.__posLine=posLine;window.__posMerge=posMerge;window.__parseInv=t=>parseInvoiceText(t);
 })();
